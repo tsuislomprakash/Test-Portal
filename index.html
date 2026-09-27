@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>EHS Safety Assessment Portal</title>
-    <!-- PDF.js Engine -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -52,8 +53,7 @@
         .question-title { font-size: 14px; font-weight: 600; color: var(--dark); margin-bottom: 10px; }
         .option-item { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 8px; font-size: 14px; cursor: pointer; }
         .option-item input { width: 18px; height: 18px; }
-        #pdfViewerContainer { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        canvas { max-width: 100%; height: auto !important; border: 1px solid #cbd5e1; background: white; }
+        #pdfViewerContainer { width: 100%; height: 100%; display: flex; flex-direction: column; }
     </style>
 </head>
 <body>
@@ -78,8 +78,8 @@
     <div class="admin-panel" id="adminPanel">
         <h3 style="font-size:15px; margin-bottom:10px;">Admin Actions: Add New Training Topic</h3>
         <div class="upload-form">
-            <input type="text" id="moduleTitle" class="form-input" placeholder="Topic Title (e.g., Chemical Safety)">
-            <input type="text" id="pdfUrlInput" class="form-input" placeholder="PDF File Link (Google Drive / Direct URL)">
+            <input type="text" id="moduleTitle" class="form-input" placeholder="Topic Title (e.g., Working at Height)">
+            <input type="text" id="pdfUrlInput" class="form-input" placeholder="Google Drive / Direct PDF URL">
             <button class="btn btn-primary" id="uploadBtn" onclick="saveTopicToServer()">Save Topic to Live Server</button>
         </div>
 
@@ -137,10 +137,6 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-
-    if (window.pdfjsLib) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-    }
 
     let isAdmin = false;
     let timerInterval = null;
@@ -221,6 +217,30 @@
         });
     }
 
+    // Default Real Questions Generator for Topics
+    function generateQuestionsForTopic(title) {
+        let titleLower = title.toLowerCase();
+        if (titleLower.includes("height")) {
+            return [
+                { q: "Working at Height ke liye kis unchai par Harness pahenna mandatory hai?", options: ["1.8 Meters (6 Feet)", "3.0 Meters", "5.0 Meters"], ans: 0 },
+                { q: "Full Body Harness ko kahan anchor karna chahiye?", options: ["Aapke kamar ke niche", "Kandhe se upar strong point par", "Kisi bhi pipe par"], ans: 1 },
+                { q: "Height work permit kab zaroori hota hai?", options: ["Har height job ke liye", "Kewal raat ko", "Kabhi nahi"], ans: 0 }
+            ];
+        } else if (titleLower.includes("material")) {
+            return [
+                { q: "Manual Lifting ke dauran body ka konsa posture sahi hai?", options: ["Kamar modkar uthana", "Ghutne modkar peeth seedhi rakhna", "Tezi se jhatke se uthana"], ans: 1 },
+                { q: "Crane rigging ke liye safety hook me kya hona zaroori hai?", options: ["Safety Latch", "Rope Extension", "Grease"], ans: 0 },
+                { q: "Overhead load ke niche khada hona:", options: ["Allowed hai", "Sakht mana hai (Zero Tolerance)", "Helmets ke sath allowed hai"], ans: 1 }
+            ];
+        } else {
+            return [
+                { q: `${title} ke dauran Personal Protective Equipment (PPE) pahenna:`, options: ["Mandatory hai", "Optional hai", "Zaroori nahi hai"], ans: 0 },
+                { q: `Kisi bhi hazard ya emergency ke waqt sabse pehle kya karna chahiye?`, options: ["Ignore karna", "Supervisor ko inform aur area evacuate karna", "Akele fix karna"], ans: 1 },
+                { q: `EHS Safety Norms ke anusar Incident Report karna:`, options: ["Mandatory hai", "Kewal major injury par", "Zaroori nahi"], ans: 0 }
+            ];
+        }
+    }
+
     async function saveTopicToServer() {
         const title = document.getElementById('moduleTitle').value.trim();
         const pdfUrl = document.getElementById('pdfUrlInput').value.trim();
@@ -236,11 +256,7 @@
                 title: title,
                 pdfUrl: pdfUrl,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                questions: [
-                    { q: `Question 1 for ${title}?`, options: ["Correct Answer", "Option B", "Option C"], ans: 0 },
-                    { q: `Question 2 for ${title}?`, options: ["Option A", "Correct Answer", "Option C"], ans: 1 },
-                    { q: `Question 3 for ${title}?`, options: ["Option A", "Option B", "Correct Answer"], ans: 2 }
-                ]
+                questions: generateQuestionsForTopic(title)
             });
 
             document.getElementById('moduleTitle').value = '';
@@ -270,7 +286,7 @@
         const content = document.getElementById('modalContent');
 
         if (topic.pdfUrl) {
-            content.innerHTML = `<div id="pdfViewerContainer"><p style="color:#64748b;">Loading document...</p></div>`;
+            content.innerHTML = `<div id="pdfViewerContainer" style="width:100%; height:75vh;"></div>`;
             renderUniversalPDFFromUrl(topic.pdfUrl);
         } else {
             content.innerHTML = `<div style="text-align:center; padding: 30px;"><h4>${topic.title}</h4><p style="color:#64748b;">No PDF link uploaded for this topic.</p></div>`;
@@ -279,44 +295,29 @@
         document.getElementById('appModal').style.display = "flex";
     }
 
-function renderUniversalPDFFromUrl(url) {
-    const container = document.getElementById('pdfViewerContainer');
-    container.innerHTML = '';
+    function renderUniversalPDFFromUrl(url) {
+        const container = document.getElementById('pdfViewerContainer');
+        container.innerHTML = '';
 
-    // Convert Google Drive view/edit link to preview iframe link
-    if (url.includes('drive.google.com')) {
-        let embedUrl = url;
-        if (url.includes('/view')) {
-            embedUrl = url.replace(/\/view.*/, '/preview');
-        } else if (!url.includes('/preview')) {
-            embedUrl = url + '/preview';
+        let finalUrl = url.trim();
+
+        if (finalUrl.includes('drive.google.com')) {
+            if (finalUrl.includes('/view')) {
+                finalUrl = finalUrl.replace(/\/view.*/, '/preview');
+            } else if (!finalUrl.includes('/preview')) {
+                finalUrl = finalUrl + '/preview';
+            }
         }
-        container.innerHTML = `<iframe src="${embedUrl}" width="100%" height="600px" style="border:none; border-radius:8px;" allow="autoplay"></iframe>`;
-        return;
+
+        container.innerHTML = `
+            <iframe 
+                src="${finalUrl}" 
+                width="100%" 
+                height="100%" 
+                style="border:none; border-radius:8px; min-height:500px;" 
+                allow="autoplay">
+            </iframe>`;
     }
-
-    // Canvas rendering for standard direct PDF links
-    pdfjsLib.getDocument(url).promise.then(pdf => {
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-            pdf.getPage(pageNum).then(page => {
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                const screenWidth = Math.min(window.innerWidth - 40, 700);
-                const unscaledViewport = page.getViewport({ scale: 1.0 });
-                const scale = screenWidth / unscaledViewport.width;
-                const viewport = page.getViewport({ scale: scale });
-
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-
-                container.appendChild(canvas);
-                page.render({ canvasContext: context, viewport: viewport });
-            });
-        }
-    }).catch(err => {
-        container.innerHTML = `<p style="color:red; font-size:13px;">Error loading PDF. Make sure the PDF URL is public.</p>`;
-    });
-}
 
     function openDetailsModal() {
         document.getElementById('modalTitle').innerText = "Candidate Details";
@@ -365,23 +366,22 @@ function renderUniversalPDFFromUrl(url) {
         let qCounter = 1;
 
         topicsData.forEach(topic => {
-            if (topic.questions) {
-                topic.questions.forEach((qObj, qIdx) => {
-                    formHTML += `
-                        <div class="question-card">
-                            <span class="topic-tag">${topic.title}</span>
-                            <div class="question-title">${qCounter}. ${qObj.q}</div>
-                            ${qObj.options.map((opt, oIdx) => `
-                                <label class="option-item">
-                                    <input type="radio" name="q_${topic.topicId}_${qIdx}" value="${oIdx}">
-                                    <span>${opt}</span>
-                                </label>
-                            `).join('')}
-                        </div>
-                    `;
-                    qCounter++;
-                });
-            }
+            let questionsList = topic.questions || generateQuestionsForTopic(topic.title);
+            questionsList.forEach((qObj, qIdx) => {
+                formHTML += `
+                    <div class="question-card">
+                        <span class="topic-tag">${topic.title}</span>
+                        <div class="question-title">${qCounter}. ${qObj.q}</div>
+                        ${qObj.options.map((opt, oIdx) => `
+                            <label class="option-item">
+                                <input type="radio" name="q_${topic.topicId}_${qIdx}" value="${oIdx}">
+                                <span>${opt}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                `;
+                qCounter++;
+            });
         });
 
         formHTML += `<button type="button" class="btn btn-success" style="padding:15px; font-size:16px; margin-bottom:20px;" onclick="submitExam()">Submit Final Exam</button></form>`;
@@ -418,14 +418,13 @@ function renderUniversalPDFFromUrl(url) {
         let totalQuestions = 0;
 
         topicsData.forEach(topic => {
-            if (topic.questions) {
-                topic.questions.forEach((qObj, qIdx) => {
-                    totalQuestions++;
-                    const selected = document.querySelector(`input[name="q_${topic.topicId}_${qIdx}"]:checked`);
-                    const userAns = selected ? parseInt(selected.value) : -1;
-                    if (userAns === qObj.ans) totalScore++;
-                });
-            }
+            let questionsList = topic.questions || generateQuestionsForTopic(topic.title);
+            questionsList.forEach((qObj, qIdx) => {
+                totalQuestions++;
+                const selected = document.querySelector(`input[name="q_${topic.topicId}_${qIdx}"]:checked`);
+                const userAns = selected ? parseInt(selected.value) : -1;
+                if (userAns === qObj.ans) totalScore++;
+            });
         });
 
         let mins = Math.floor(timeElapsedInSeconds / 60);
