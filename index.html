@@ -358,8 +358,8 @@
             <div>
                 <div class="form-group"><label>Full Name *</label><input type="text" id="workerName" class="form-control" placeholder="Enter Full Name" style="text-transform:none;"></div>
                 <div class="form-group">
-                    <label>Safety Pass Number * (Max 12 Alphanumeric Digits)</label>
-                    <input type="text" id="safetyPassNo" class="form-control" placeholder="e.g. SP2026101" maxlength="12" oninput="formatPassNumber(this)">
+                    <label>Safety Pass Number * (Only Digits & Alphabets, Max 12 Chars)</label>
+                    <input type="text" id="safetyPassNo" class="form-control" placeholder="e.g. SP2026101" maxlength="12" oninput="formatPassNumber(this)" autocomplete="off">
                 </div>
                 <div class="form-group"><label>Vendor Name *</label><input type="text" id="vendorName" class="form-control" placeholder="Vendor / Agency" style="text-transform:none;"></div>
                 <div class="form-group"><label>Department *</label><input type="text" id="department" class="form-control" placeholder="Department" style="text-transform:none;"></div>
@@ -375,38 +375,54 @@
         document.getElementById('appModal').style.display = "flex";
     }
 
-    // FORMAT & RESTRICT SAFETY PASS NUMBER (ALPHA-NUMERIC ONLY, MAX 12, AUTO UPPERCASE)
+    // STRICT FORMATTING: REMOVE SPECIAL CHARS, SPACES AND CONVERT TO UPPERCASE
     function formatPassNumber(input) {
-        let cleanVal = input.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        if (cleanVal.length > 12) {
-            cleanVal = cleanVal.substring(0, 12);
-        }
-        input.value = cleanVal;
+        input.value = input.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     }
 
     async function validateAndStartTest() {
-        const name = document.getElementById('workerName').value.trim();
-        const passNo = document.getElementById('safetyPassNo').value.trim().toUpperCase();
-        const vendor = document.getElementById('vendorName').value.trim();
-        const dept = document.getElementById('department').value.trim();
-        const checked = document.getElementById('readDeclaration').checked;
+        const nameInput = document.getElementById('workerName');
+        const passInput = document.getElementById('safetyPassNo');
+        const vendorInput = document.getElementById('vendorName');
+        const deptInput = document.getElementById('department');
+        const checkInput = document.getElementById('readDeclaration');
 
-        if (!name || !passNo || !vendor || !dept) return alert("Kripya saare Details bharein!");
-        if (passNo.length > 12) return alert("Safety Pass Number me max 12 characters hi allowed hain!");
-        if (!checked) return alert("Kripya checkbox par tick karein!");
+        const name = nameInput ? nameInput.value.trim() : '';
+        const passNo = passInput ? passInput.value.trim().toUpperCase() : '';
+        const vendor = vendorInput ? vendorInput.value.trim() : '';
+        const dept = deptInput ? deptInput.value.trim() : '';
+        const checked = checkInput ? checkInput.checked : false;
+
+        // 1. BASIC EMPTY CHECKS
+        if (!name || !passNo || !vendor || !dept) {
+            alert("Kripya saare Details sahi se bharein!");
+            return;
+        }
+
+        // 2. STRICT SAFETY PASS NO VALIDATION (ALPHANUMERIC & MAX 12)
+        const alphaNumericRegex = /^[A-Z0-9]{1,12}$/;
+        if (!alphaNumericRegex.test(passNo)) {
+            alert("Invalid Safety Pass Number!\nKewal Digits (0-9) aur Alphabets (A-Z) hi allowed hain, bina kisi space ya special character ke (Max 12 chars).");
+            return;
+        }
+
+        if (!checked) {
+            alert("Kripya checkbox par tick karein!");
+            return;
+        }
 
         const startBtn = document.getElementById('startExamBtn');
-        startBtn.innerText = "Checking Details...";
+        startBtn.innerText = "Checking Pass Number...";
         startBtn.disabled = true;
 
         try {
-            // DUPLICATE PASS NUMBER CHECK (CASE-INSENSITIVE)
+            // 3. STRICT LIVE DUPLICATE CHECK FROM FIREBASE
             const snapshot = await db.collection("test_results").get();
             let isDuplicate = false;
 
             snapshot.forEach(doc => {
                 const data = doc.data();
-                if (data.passNo && data.passNo.toString().trim().toUpperCase() === passNo) {
+                if (data && data.passNo && data.passNo.toString().trim().toUpperCase() === passNo) {
                     isDuplicate = true;
                 }
             });
@@ -415,7 +431,7 @@
                 alert(`Warning: Safety Pass Number "${passNo}" pehle se hi registered hai!\nDuplicate entry allowed nahi hai.`);
                 startBtn.innerText = "Start Examination Now";
                 startBtn.disabled = false;
-                return;
+                return; // STRICT RETURN: PROCEED DONT ALLOW
             }
 
             currentWorkerDetails = { name: name, passNo: passNo, vendor: vendor, dept: dept, date: new Date().toLocaleDateString('en-GB') };
