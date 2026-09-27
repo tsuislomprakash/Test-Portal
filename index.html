@@ -23,7 +23,7 @@
         .role-badge { padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #475569; color: white; }
         .role-badge.admin { background: var(--warning); color: #000; }
         
-        .container { max-width: 900px; margin: 0 auto; }
+        .container { max-width: 950px; margin: 0 auto; }
         
         .summary-card { background: #f8fafc; padding: 15px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 20px; }
         .admin-panel { background: #fff; padding: 15px; border: 1px solid #000; margin-bottom: 20px; display: none; }
@@ -37,15 +37,18 @@
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .card { background: #fff; border: 1px solid #ccc; padding: 10px; border-radius: 4px; }
         
-        .btn { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; display: inline-block; width: 100%; margin-top: 5px; }
+        .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; display: inline-block; }
+        .btn-block { width: 100%; margin-top: 5px; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-warning { background: var(--warning); color: #000; }
         .btn-danger { background: var(--danger); color: white; }
-        .btn-outline { border: 1px solid white; color: white; background: transparent; padding: 4px 8px; width: auto; font-size: 12px; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-outline { border: 1px solid white; color: white; background: transparent; padding: 4px 8px; font-size: 12px; }
+        .btn-sm { padding: 4px 8px; font-size: 11px; margin-right: 3px; }
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 99999; justify-content: center; align-items: center; }
-        .modal-body { background: white; width: 95%; max-width: 800px; height: 90vh; border-radius: 6px; display: flex; flex-direction: column; overflow: hidden; }
+        .modal-body { background: white; width: 95%; max-width: 850px; height: 90vh; border-radius: 6px; display: flex; flex-direction: column; overflow: hidden; }
         .modal-header { padding: 12px 15px; background: #eee; border-bottom: 1px solid #ccc; display: flex; justify-content: space-between; align-items: center; }
         .timer-box { background: var(--danger); color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 14px; }
         .modal-content-area { flex: 1; padding: 15px; overflow-y: auto; }
@@ -58,6 +61,16 @@
         .q-text { font-size: 15px; font-weight: bold; margin-bottom: 8px; color: #000; }
         .opt-label { display: block; font-size: 14px; margin-bottom: 6px; cursor: pointer; color: #222; }
         .opt-label input { margin-right: 8px; }
+
+        /* Answer sheet review styles */
+        .ans-review-card { border: 1px solid #ccc; border-radius: 5px; padding: 10px; margin-bottom: 10px; background: #fafafa; }
+        .ans-correct { background-color: #d4edda; border-color: #c3e6cb; }
+        .ans-wrong { background-color: #f8d7da; border-color: #f5c6cb; }
+        .ans-skipped { background-color: #fff3cd; border-color: #ffeeba; }
+        .status-tag { display: inline-block; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 3px; color: white; margin-bottom: 5px; }
+        .tag-correct { background: var(--success); }
+        .tag-wrong { background: var(--danger); }
+        .tag-skipped { background: #6c757d; }
     </style>
 </head>
 <body>
@@ -74,7 +87,7 @@
     <div class="summary-card">
         <h3 style="font-size:16px;">Final Safety Exam</h3>
         <p style="font-size:13px; color:#555; margin: 5px 0 10px 0;">Total Questions: <b>50 Questions</b> | Time Limit: <b>50 Minutes</b></p>
-        <button class="btn btn-warning" onclick="openDetailsModal()">Start Final Test</button>
+        <button class="btn btn-warning btn-block" onclick="openDetailsModal()">Start Final Test</button>
     </div>
 
     <div class="admin-panel" id="adminPanel">
@@ -101,10 +114,11 @@
                         <th>Dept</th>
                         <th>Time</th>
                         <th>Score</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="resultsTableBody">
-                    <tr><td colspan="7" style="text-align:center;">Loading live results...</td></tr>
+                    <tr><td colspan="8" style="text-align:center;">Loading live results...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -280,8 +294,8 @@
             card.className = 'card';
             card.innerHTML = `
                 <h4 style="font-size:14px; margin-bottom:5px;">${t.title}</h4>
-                <button class="btn btn-primary" onclick="readTopicPDF('${t.topicId}')">Read Material</button>
-                ${isAdmin ? `<button class="btn btn-danger" onclick="deleteModule('${t.topicId}')">Delete</button>` : ''}
+                <button class="btn btn-primary btn-block" onclick="readTopicPDF('${t.topicId}')">Read Material</button>
+                ${isAdmin ? `<button class="btn btn-danger btn-block" onclick="deleteModule('${t.topicId}')">Delete</button>` : ''}
             `;
             grid.appendChild(card);
         });
@@ -366,14 +380,13 @@
                         <input type="checkbox" id="readDeclaration"> Maine safety rules padh liye hain.
                     </label>
                 </div>
-                <button type="button" id="startExamBtn" class="btn btn-success" onclick="validateAndStartTest()">Start Examination Now</button>
+                <button type="button" id="startExamBtn" class="btn btn-success btn-block" onclick="validateAndStartTest()">Start Examination Now</button>
             </div>
         `;
 
         document.getElementById('appModal').style.display = "flex";
     }
 
-    // STRICT FORMATTING: REMOVE SPACES, SPECIAL CHARACTERS & CONVERT TO UPPERCASE
     function formatPassNumber(input) {
         input.value = input.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     }
@@ -391,23 +404,20 @@
         const dept = deptInput ? deptInput.value.trim() : '';
         const checked = checkInput ? checkInput.checked : false;
 
-        // 1. BASIC EMPTY CHECKS
         if (!name || !passNo || !vendor || !dept) {
             alert("Kripya saare Details sahi se bharein!");
             return;
         }
 
-        // 2. STRICT 12 CHARACTER LENGTH CHECK
         if (passNo.length !== 12) {
             alert(`Invalid Safety Pass Number!\nPass Number poore 12 characters ka hona chahiye. Aapne sirf ${passNo.length} characters daale hain.`);
-            return; // STRICT STOP
+            return;
         }
 
-        // 3. EXACT 12 ALPHANUMERIC REGEX CHECK
         const strictTwelveRegex = /^[A-Z0-9]{12}$/;
         if (!strictTwelveRegex.test(passNo)) {
             alert("Invalid Safety Pass Number!\nKewal Digits (0-9) aur Alphabets (A-Z) allowed hain, exact 12 characters.");
-            return; // STRICT STOP
+            return;
         }
 
         if (!checked) {
@@ -420,7 +430,6 @@
         startBtn.disabled = true;
 
         try {
-            // 4. STRICT LIVE DUPLICATE CHECK FROM FIREBASE
             const snapshot = await db.collection("test_results").get();
             let isDuplicate = false;
 
@@ -435,7 +444,7 @@
                 alert(`Warning: Safety Pass Number "${passNo}" pehle se hi registered hai!\nDuplicate entry allowed nahi hai.`);
                 startBtn.innerText = "Start Examination Now";
                 startBtn.disabled = false;
-                return; // STRICT STOP
+                return;
             }
 
             currentWorkerDetails = { name: name, passNo: passNo, vendor: vendor, dept: dept, date: new Date().toLocaleDateString('en-GB') };
@@ -468,7 +477,7 @@
             `;
         });
 
-        formHTML += `<button type="button" class="btn btn-success" style="margin-bottom:20px;" onclick="submitExam()">Submit Final Exam</button></form>`;
+        formHTML += `<button type="button" class="btn btn-success btn-block" style="margin-bottom:20px;" onclick="submitExam()">Submit Final Exam</button></form>`;
         content.innerHTML = formHTML;
         document.getElementById('modalContent').scrollTop = 0;
 
@@ -500,10 +509,12 @@
 
         let totalScore = 0;
         let totalQuestions = DIRECT_QUESTIONS_BANK.length;
+        let userAnswersMap = {};
 
         DIRECT_QUESTIONS_BANK.forEach((qObj, index) => {
             const selected = document.querySelector(`input[name="q_${index}"]:checked`);
             const userAns = selected ? parseInt(selected.value) : -1;
+            userAnswersMap[index] = userAns;
             if (userAns === qObj.ans) totalScore++;
         });
 
@@ -519,6 +530,7 @@
             dept: currentWorkerDetails.dept,
             timeTaken: formattedTime,
             score: `${totalScore}/${totalQuestions}`,
+            userAnswers: userAnswersMap, // SAVING CANDIDATE ANSWERS FOR VIEW FEATURE
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
 
@@ -548,7 +560,7 @@
         tbody.innerHTML = '';
 
         if (testResultsList.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No test results recorded on server.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No test results recorded on server.</td></tr>`;
             return;
         }
 
@@ -562,9 +574,132 @@
                 <td>${res.dept}</td>
                 <td>${res.timeTaken}</td>
                 <td><b>${res.score}</b></td>
+                <td>
+                    <button class="btn btn-info btn-sm" onclick="viewCandidateAnswers('${res.id}')">View</button>
+                    <button class="btn btn-warning btn-sm" onclick="editResultEntry('${res.id}')">Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteResultEntry('${res.id}')">Delete</button>
+                </td>
             `;
             tbody.appendChild(tr);
         });
+    }
+
+    // 1. VIEW DETAILED CANDIDATE QUESTION-ANSWER SHEET
+    function viewCandidateAnswers(resultId) {
+        const record = testResultsList.find(r => r.id === resultId);
+        if (!record) return alert("Record not found!");
+
+        document.getElementById('modalTitle').innerText = `Answer Sheet: ${record.name} (${record.passNo})`;
+        document.getElementById('timerBox').style.display = "none";
+
+        let userAns = record.userAnswers || {};
+        let reviewHTML = `
+            <div style="margin-bottom:15px; background:#eee; padding:10px; border-radius:4px; font-size:13px;">
+                <p><b>Name:</b> ${record.name} | <b>Pass No:</b> ${record.passNo}</p>
+                <p><b>Vendor:</b> ${record.vendor} | <b>Department:</b> ${record.dept}</p>
+                <p><b>Score:</b> <span style="color:var(--primary); font-weight:bold;">${record.score}</span> | <b>Time Taken:</b> ${record.timeTaken}</p>
+            </div>
+            <h4>Detailed Response Sheet:</h4><br>
+        `;
+
+        DIRECT_QUESTIONS_BANK.forEach((qObj, idx) => {
+            let candidateSelected = userAns[idx] !== undefined ? userAns[idx] : -1;
+            let isCorrect = candidateSelected === qObj.ans;
+            let isSkipped = candidateSelected === -1;
+
+            let cardClass = "ans-review-card " + (isSkipped ? "ans-skipped" : (isCorrect ? "ans-correct" : "ans-wrong"));
+            let tagHTML = isSkipped ? `<span class="status-tag tag-skipped">Skipped / Unanswered</span>` :
+                         (isCorrect ? `<span class="status-tag tag-correct">Correct Answer</span>` : `<span class="status-tag tag-wrong">Incorrect Answer</span>`);
+
+            reviewHTML += `
+                <div class="${cardClass}">
+                    ${tagHTML}
+                    <div style="font-weight:bold; font-size:14px; margin-bottom:6px;">Q${idx + 1}. ${qObj.q}</div>
+                    <ul style="padding-left:20px; font-size:13px;">
+                        ${qObj.options.map((opt, oIdx) => {
+                            let style = "";
+                            let note = "";
+                            if (oIdx === qObj.ans) {
+                                style = "color: green; font-weight: bold;";
+                                note = " (✓ Correct Answer)";
+                            }
+                            if (oIdx === candidateSelected && !isCorrect) {
+                                style = "color: red; font-weight: bold;";
+                                note = " (✗ Selected Choice)";
+                            } else if (oIdx === candidateSelected && isCorrect) {
+                                note = " (Selected Choice)";
+                            }
+                            return `<li style="${style}">${opt}${note}</li>`;
+                        }).join('')}
+                    </ul>
+                </div>
+            `;
+        });
+
+        document.getElementById('modalContent').innerHTML = reviewHTML;
+        document.getElementById('appModal').style.display = "flex";
+    }
+
+    // 2. EDIT CANDIDATE RESULT ENTRY (ADMIN ONLY)
+    function editResultEntry(resultId) {
+        const record = testResultsList.find(r => r.id === resultId);
+        if (!record) return;
+
+        document.getElementById('modalTitle').innerText = "Edit Test Result";
+        document.getElementById('timerBox').style.display = "none";
+
+        document.getElementById('modalContent').innerHTML = `
+            <div>
+                <div class="form-group"><label>Date</label><input type="text" id="editDate" class="form-control" value="${record.date || ''}" style="text-transform:none;"></div>
+                <div class="form-group"><label>Full Name</label><input type="text" id="editName" class="form-control" value="${record.name || ''}" style="text-transform:none;"></div>
+                <div class="form-group"><label>Safety Pass No (12 Chars)</label><input type="text" id="editPassNo" class="form-control" value="${record.passNo || ''}" maxlength="12" oninput="formatPassNumber(this)"></div>
+                <div class="form-group"><label>Vendor Name</label><input type="text" id="editVendor" class="form-control" value="${record.vendor || ''}" style="text-transform:none;"></div>
+                <div class="form-group"><label>Department</label><input type="text" id="editDept" class="form-control" value="${record.dept || ''}" style="text-transform:none;"></div>
+                <button type="button" class="btn btn-success btn-block" onclick="saveEditedResult('${record.id}')">Save Changes</button>
+            </div>
+        `;
+
+        document.getElementById('appModal').style.display = "flex";
+    }
+
+    async function saveEditedResult(resultId) {
+        const date = document.getElementById('editDate').value.trim();
+        const name = document.getElementById('editName').value.trim();
+        const passNo = document.getElementById('editPassNo').value.trim().toUpperCase();
+        const vendor = document.getElementById('editVendor').value.trim();
+        const dept = document.getElementById('editDept').value.trim();
+
+        if (!date || !name || !passNo || !vendor || !dept) return alert("All fields are required!");
+
+        if (passNo.length !== 12 || !/^[A-Z0-9]{12}$/.test(passNo)) {
+            return alert("Safety Pass Number exact 12 Alphanumeric characters ka hona chahiye!");
+        }
+
+        try {
+            await db.collection("test_results").doc(resultId).update({
+                date: date,
+                name: name,
+                passNo: passNo,
+                vendor: vendor,
+                dept: dept
+            });
+            alert("Entry updated successfully!");
+            closeModal();
+        } catch (err) {
+            alert("Error updating entry: " + err.message);
+        }
+    }
+
+    // 3. DELETE CANDIDATE RESULT ENTRY (ADMIN ONLY)
+    async function deleteResultEntry(resultId) {
+        if (confirm("Kya aap sach me iss Result Entry ko DELETE karna chahte hain?")) {
+            try {
+                await db.collection("test_results").doc(resultId).delete();
+                alert("Result entry deleted successfully!");
+            } catch (err) {
+                alert("Error deleting record: " + err.message);
+            }
+        }
     }
 
     function exportToCSV() {
