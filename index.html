@@ -279,31 +279,44 @@
         document.getElementById('appModal').style.display = "flex";
     }
 
-    function renderUniversalPDFFromUrl(url) {
-        const container = document.getElementById('pdfViewerContainer');
-        container.innerHTML = '';
+function renderUniversalPDFFromUrl(url) {
+    const container = document.getElementById('pdfViewerContainer');
+    container.innerHTML = '';
 
-        pdfjsLib.getDocument(url).promise.then(pdf => {
-            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                pdf.getPage(pageNum).then(page => {
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    const screenWidth = Math.min(window.innerWidth - 40, 700);
-                    const unscaledViewport = page.getViewport({ scale: 1.0 });
-                    const scale = screenWidth / unscaledViewport.width;
-                    const viewport = page.getViewport({ scale: scale });
-
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-
-                    container.appendChild(canvas);
-                    page.render({ canvasContext: context, viewport: viewport });
-                });
-            }
-        }).catch(err => {
-            container.innerHTML = `<p style="color:red; font-size:13px;">Error loading PDF. Make sure the PDF URL is public.</p>`;
-        });
+    // Convert Google Drive view/edit link to preview iframe link
+    if (url.includes('drive.google.com')) {
+        let embedUrl = url;
+        if (url.includes('/view')) {
+            embedUrl = url.replace(/\/view.*/, '/preview');
+        } else if (!url.includes('/preview')) {
+            embedUrl = url + '/preview';
+        }
+        container.innerHTML = `<iframe src="${embedUrl}" width="100%" height="600px" style="border:none; border-radius:8px;" allow="autoplay"></iframe>`;
+        return;
     }
+
+    // Canvas rendering for standard direct PDF links
+    pdfjsLib.getDocument(url).promise.then(pdf => {
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            pdf.getPage(pageNum).then(page => {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                const screenWidth = Math.min(window.innerWidth - 40, 700);
+                const unscaledViewport = page.getViewport({ scale: 1.0 });
+                const scale = screenWidth / unscaledViewport.width;
+                const viewport = page.getViewport({ scale: scale });
+
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                container.appendChild(canvas);
+                page.render({ canvasContext: context, viewport: viewport });
+            });
+        }
+    }).catch(err => {
+        container.innerHTML = `<p style="color:red; font-size:13px;">Error loading PDF. Make sure the PDF URL is public.</p>`;
+    });
+}
 
     function openDetailsModal() {
         document.getElementById('modalTitle').innerText = "Candidate Details";
