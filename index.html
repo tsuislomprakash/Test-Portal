@@ -13,46 +13,52 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <style>
-        :root { --primary: #0d6efd; --dark: #0f172a; --success: #198754; --danger: #dc3545; --warning: #ffc107; --bg: #f8fafc; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--bg); color: #334155; padding-bottom: 30px; }
-        .navbar { background: var(--dark); color: white; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-        .navbar h1 { font-size: 16px; font-weight: 600; }
+        :root { --primary: #0d6efd; --dark: #0f172a; --success: #198754; --danger: #dc3545; --warning: #ffc107; --bg: #ffffff; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        body { background-color: var(--bg); color: #000000; padding: 15px; }
+        
+        .navbar { background: var(--dark); color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-radius: 4px; margin-bottom: 15px; }
+        .navbar h1 { font-size: 16px; margin: 0; }
         .nav-controls { display: flex; align-items: center; gap: 10px; }
-        .role-badge { padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: bold; background: #475569; }
+        .role-badge { padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #475569; color: white; }
         .role-badge.admin { background: var(--warning); color: #000; }
-        .container { max-width: 1200px; margin: 15px auto; padding: 0 12px; }
-        .summary-card { background: white; padding: 16px; border-radius: 8px; border-left: 5px solid var(--primary); box-shadow: 0 2px 6px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .admin-panel { background: white; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 20px; display: none; }
-        .upload-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; padding: 12px; background: #f1f5f9; border-radius: 6px; }
-        .form-input { padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 14px; width: 100%; }
-        .results-table-wrapper { overflow-x: auto; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
-        th, td { padding: 8px 10px; border: 1px solid #e2e8f0; white-space: nowrap; }
-        th { background: #f1f5f9; color: var(--dark); }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 15px; }
-        .card { background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; }
-        .btn { padding: 12px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; text-align: center; display: inline-block; width: 100%; touch-action: manipulation; }
+        
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        .summary-card { background: #f8fafc; padding: 15px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 20px; }
+        .admin-panel { background: #fff; padding: 15px; border: 1px solid #000; margin-bottom: 20px; display: none; }
+        .upload-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; padding: 10px; background: #f1f5f9; }
+        .form-input { padding: 8px; border: 1px solid #ccc; font-size: 14px; width: 100%; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; text-align: left; }
+        th, td { padding: 8px; border: 1px solid #ccc; }
+        th { background: #eee; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .card { background: #fff; border: 1px solid #ccc; padding: 10px; border-radius: 4px; }
+        
+        .btn { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; display: inline-block; width: 100%; margin-top: 5px; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
-        .btn-warning { background: var(--warning); color: #000; font-weight: bold; }
+        .btn-warning { background: var(--warning); color: #000; }
         .btn-danger { background: var(--danger); color: white; }
-        .btn-outline { border: 1px solid white; color: white; background: transparent; padding: 6px 12px; width: auto; font-size: 12px; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.85); z-index: 99999; justify-content: center; align-items: flex-end; }
-        @media(min-width: 600px) { .modal { align-items: center; } }
-        .modal-body { background: white; width: 100%; max-width: 800px; height: 90vh; border-top-left-radius: 16px; border-top-right-radius: 16px; display: flex; flex-direction: column; overflow: hidden; }
-        @media(min-width: 600px) { .modal-body { border-radius: 10px; height: 85vh; width: 95%; } }
-        .modal-header { padding: 15px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-        .timer-box { background: var(--danger); color: white; padding: 4px 10px; border-radius: 15px; font-weight: bold; font-size: 13px; }
-        .modal-content-area { flex: 1; padding: 15px; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #f8fafc; }
+        .btn-outline { border: 1px solid white; color: white; background: transparent; padding: 4px 8px; width: auto; font-size: 12px; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 99999; justify-content: center; align-items: center; }
+        .modal-body { background: white; width: 95%; max-width: 800px; height: 90vh; border-radius: 6px; display: flex; flex-direction: column; overflow: hidden; }
+        .modal-header { padding: 12px 15px; background: #eee; border-bottom: 1px solid #ccc; display: flex; justify-content: space-between; align-items: center; }
+        .timer-box { background: var(--danger); color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 14px; }
+        .modal-content-area { flex: 1; padding: 15px; overflow-y: auto; }
+        
         .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 13px; }
-        .form-control { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 14px; }
-        .question-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
-        .question-title { font-size: 15px; font-weight: 600; color: var(--dark); margin-bottom: 12px; line-height: 1.4; }
-        .option-item { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 8px; font-size: 14px; cursor: pointer; }
-        .option-item input { width: 18px; height: 18px; }
-        #pdfViewerContainer { width: 100%; height: 100%; display: flex; flex-direction: column; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; }
+        .form-control { width: 100%; padding: 8px; border: 1px solid #ccc; font-size: 14px; }
+
+        /* ULTRA SIMPLE PLAIN QUESTION STYLING */
+        .q-block { border-bottom: 1px solid #ddd; padding-bottom: 15px; margin-bottom: 15px; }
+        .q-text { font-size: 15px; font-weight: bold; margin-bottom: 8px; color: #000; }
+        .opt-label { display: block; font-size: 14px; margin-bottom: 6px; cursor: pointer; color: #222; }
+        .opt-label input { margin-right: 8px; }
     </style>
 </head>
 <body>
@@ -67,11 +73,9 @@
 
 <div class="container">
     <div class="summary-card">
-        <div>
-            <h3 style="font-size:16px;">Final Safety Exam</h3>
-            <p style="font-size:13px; color:#64748b; margin-top:3px;">Total Questions: <b>50 Questions</b> | Time Limit: <b>50 Minutes</b></p>
-        </div>
-        <button class="btn btn-warning" id="startTestBtn" onclick="openDetailsModal()">Start Final Test</button>
+        <h3 style="font-size:16px;">Final Safety Exam</h3>
+        <p style="font-size:13px; color:#555; margin: 5px 0 10px 0;">Total Questions: <b>50 Questions</b> | Time Limit: <b>50 Minutes</b></p>
+        <button class="btn btn-warning" onclick="openDetailsModal()">Start Final Test</button>
     </div>
 
     <div class="admin-panel" id="adminPanel">
@@ -87,7 +91,7 @@
             <button class="btn btn-success" style="width:auto; padding:6px 12px; font-size:12px;" onclick="exportToCSV()">Export Excel</button>
         </div>
 
-        <div class="results-table-wrapper">
+        <div style="overflow-x: auto;">
             <table>
                 <thead>
                     <tr>
@@ -107,8 +111,8 @@
         </div>
     </div>
 
-    <h3 style="margin-bottom: 12px; color: var(--dark); font-size:16px;">Training Materials</h3>
-    <div class="grid" id="modulesGrid"><p style="color:#64748b;">Loading modules from server...</p></div>
+    <h3 style="margin-bottom: 10px; font-size:16px;">Training Materials</h3>
+    <div class="grid" id="modulesGrid"><p style="color:#666;">Loading modules from server...</p></div>
 </div>
 
 <div class="modal" id="appModal">
@@ -116,7 +120,7 @@
         <div class="modal-header">
             <h3 id="modalTitle" style="font-size:15px;">Portal Action</h3>
             <div class="timer-box" id="timerBox" style="display: none;"><span id="timeRemaining">50:00</span></div>
-            <span style="cursor: pointer; font-size: 24px; font-weight: bold; padding: 0 5px;" onclick="closeModal()">&times;</span>
+            <span style="cursor: pointer; font-size: 24px; font-weight: bold;" onclick="closeModal()">&times;</span>
         </div>
         <div class="modal-content-area" id="modalContent"></div>
     </div>
@@ -143,7 +147,7 @@
     let topicsData = [];
     let testResultsList = [];
 
-    // DIRECT 50 EXAM QUESTIONS FROM ALL ATTACHED PDF FILES (NO TOPIC HEADINGS ATTACHED)
+    // DIRECT PLAIN QUESTIONS BANK (NO TOPIC CARDS / TAGS)
     const DIRECT_QUESTIONS_BANK = [
         // Working at Height
         { q: "What is Working at Height? (ऊँचाई पर कार्य क्या है?)", options: ["Work above 2 metres (2 मीटर से अधिक ऊँचाई पर कार्य)", "Work below 1 metre", "Ground level work"], ans: 0 },
@@ -269,7 +273,7 @@
         const grid = document.getElementById('modulesGrid');
         grid.innerHTML = '';
         if (topicsData.length === 0) {
-            grid.innerHTML = `<p style="color:#64748b;">No training materials available on server.</p>`;
+            grid.innerHTML = `<p style="color:#666;">No training materials available on server.</p>`;
             return;
         }
 
@@ -277,12 +281,9 @@
             const card = document.createElement('div');
             card.className = 'card';
             card.innerHTML = `
-                <h4 style="font-size:14px;">${t.title}</h4>
-                <p style="font-size:12px; color:#64748b;">${t.pdfUrl ? 'PDF Material Linked ✅' : 'Standard Material'}</p>
-                <div style="display:flex; gap:8px;">
-                    <button class="btn btn-primary" onclick="readTopicPDF('${t.topicId}')">Read Material</button>
-                    ${isAdmin ? `<button class="btn btn-danger" style="width:70px;" onclick="deleteModule('${t.topicId}')">Delete</button>` : ''}
-                </div>
+                <h4 style="font-size:14px; margin-bottom:5px;">${t.title}</h4>
+                <button class="btn btn-primary" onclick="readTopicPDF('${t.topicId}')">Read Material</button>
+                ${isAdmin ? `<button class="btn btn-danger" onclick="deleteModule('${t.topicId}')">Delete</button>` : ''}
             `;
             grid.appendChild(card);
         });
@@ -295,7 +296,7 @@
         if (!title) return alert("Please enter topic title!");
 
         const btn = document.getElementById('uploadBtn');
-        btn.innerText = "Saving to Live Server...";
+        btn.innerText = "Saving...";
         btn.disabled = true;
 
         try {
@@ -307,7 +308,7 @@
 
             document.getElementById('moduleTitle').value = '';
             document.getElementById('pdfUrlInput').value = '';
-            alert("New Material added successfully!");
+            alert("New Material added!");
         } catch (error) {
             alert("Error saving: " + error.message);
         } finally {
@@ -332,37 +333,20 @@
         const content = document.getElementById('modalContent');
 
         if (topic.pdfUrl) {
-            content.innerHTML = `<div id="pdfViewerContainer" style="width:100%; height:75vh;"></div>`;
-            renderUniversalPDFFromUrl(topic.pdfUrl);
+            let finalUrl = topic.pdfUrl.trim();
+            if (finalUrl.includes('drive.google.com')) {
+                if (finalUrl.includes('/view')) {
+                    finalUrl = finalUrl.replace(/\/view.*/, '/preview');
+                } else if (!finalUrl.includes('/preview')) {
+                    finalUrl = finalUrl + '/preview';
+                }
+            }
+            content.innerHTML = `<iframe src="${finalUrl}" width="100%" height="100%" style="border:none; min-height:500px;"></iframe>`;
         } else {
-            content.innerHTML = `<div style="text-align:center; padding: 30px;"><h4>${topic.title}</h4><p style="color:#64748b;">No PDF link uploaded for this topic.</p></div>`;
+            content.innerHTML = `<div style="text-align:center; padding: 30px;"><h4>${topic.title}</h4><p>No PDF link uploaded.</p></div>`;
         }
 
         document.getElementById('appModal').style.display = "flex";
-    }
-
-    function renderUniversalPDFFromUrl(url) {
-        const container = document.getElementById('pdfViewerContainer');
-        container.innerHTML = '';
-
-        let finalUrl = url.trim();
-
-        if (finalUrl.includes('drive.google.com')) {
-            if (finalUrl.includes('/view')) {
-                finalUrl = finalUrl.replace(/\/view.*/, '/preview');
-            } else if (!finalUrl.includes('/preview')) {
-                finalUrl = finalUrl + '/preview';
-            }
-        }
-
-        container.innerHTML = `
-            <iframe 
-                src="${finalUrl}" 
-                width="100%" 
-                height="100%" 
-                style="border:none; border-radius:8px; min-height:500px;" 
-                allow="autoplay">
-            </iframe>`;
     }
 
     function openDetailsModal() {
@@ -371,18 +355,17 @@
 
         const content = document.getElementById('modalContent');
         content.innerHTML = `
-            <div style="background:white; padding:15px; border-radius:8px;">
+            <div>
                 <div class="form-group"><label>Full Name *</label><input type="text" id="workerName" class="form-control" placeholder="Enter Full Name"></div>
                 <div class="form-group"><label>Safety Pass Number *</label><input type="text" id="safetyPassNo" class="form-control" placeholder="e.g. SP-2026-101"></div>
                 <div class="form-group"><label>Vendor Name *</label><input type="text" id="vendorName" class="form-control" placeholder="Vendor / Agency"></div>
                 <div class="form-group"><label>Department *</label><input type="text" id="department" class="form-control" placeholder="Department"></div>
                 <div style="margin: 15px 0;">
-                    <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600;">
-                        <input type="checkbox" id="readDeclaration" style="width:18px; height:18px;">
-                        Maine safety rules padh liye hain.
+                    <label style="font-size:13px; font-weight:bold;">
+                        <input type="checkbox" id="readDeclaration"> Maine safety rules padh liye hain.
                     </label>
                 </div>
-                <button type="button" class="btn btn-success" style="padding:14px; font-size:16px;" onclick="validateAndStartTest()">Start Examination Now</button>
+                <button type="button" class="btn btn-success" onclick="validateAndStartTest()">Start Examination Now</button>
             </div>
         `;
 
@@ -410,21 +393,22 @@
 
         let formHTML = `<form id="examForm">`;
 
+        // ULTRA SIMPLE PLAIN HTML FOR QUESTIONS & OPTIONS
         DIRECT_QUESTIONS_BANK.forEach((qObj, index) => {
             formHTML += `
-                <div class="question-card">
-                    <div class="question-title">${index + 1}. ${qObj.q}</div>
+                <div class="q-block">
+                    <div class="q-text">${index + 1}. ${qObj.q}</div>
                     ${qObj.options.map((opt, oIdx) => `
-                        <label class="option-item">
+                        <label class="opt-label">
                             <input type="radio" name="q_${index}" value="${oIdx}">
-                            <span>${opt}</span>
+                            ${opt}
                         </label>
                     `).join('')}
                 </div>
             `;
         });
 
-        formHTML += `<button type="button" class="btn btn-success" style="padding:15px; font-size:16px; margin-bottom:20px;" onclick="submitExam()">Submit Final Exam</button></form>`;
+        formHTML += `<button type="button" class="btn btn-success" style="margin-bottom:20px;" onclick="submitExam()">Submit Final Exam</button></form>`;
         content.innerHTML = formHTML;
         document.getElementById('modalContent').scrollTop = 0;
 
@@ -487,13 +471,13 @@
         document.getElementById('timerBox').style.display = "none";
         document.getElementById('modalTitle').innerText = "Exam Result";
         document.getElementById('modalContent').innerHTML = `
-            <div style="background:white; padding:25px; border-radius:8px; text-align:center;">
+            <div style="text-align:center; padding:20px;">
                 <h3>Exam Submitted</h3>
-                <hr style="margin:12px 0;">
-                <p style="font-size:14px;">Candidate: <b>${currentWorkerDetails.name}</b></p>
-                <p style="font-size:14px;">Pass No: <b>${currentWorkerDetails.passNo}</b></p>
-                <p style="font-size:22px; margin:15px 0; color:var(--primary);"><b>${totalScore} / ${totalQuestions}</b></p>
-                <p style="font-size:13px;">Time Taken: <b>${formattedTime}</b></p>
+                <br>
+                <p>Candidate: <b>${currentWorkerDetails.name}</b></p>
+                <p>Pass No: <b>${currentWorkerDetails.passNo}</b></p>
+                <h2 style="margin:15px 0; color:var(--primary);">${totalScore} / ${totalQuestions}</h2>
+                <p>Time Taken: <b>${formattedTime}</b></p>
                 <button class="btn btn-primary" style="margin-top:20px;" onclick="closeModal()">Close</button>
             </div>
         `;
