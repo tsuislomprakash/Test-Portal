@@ -54,7 +54,6 @@
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; }
         .form-control { width: 100%; padding: 8px; border: 1px solid #ccc; font-size: 14px; text-transform: uppercase; }
 
-        /* ULTRA SIMPLE PLAIN QUESTION STYLING */
         .q-block { border-bottom: 1px solid #ddd; padding-bottom: 15px; margin-bottom: 15px; }
         .q-text { font-size: 15px; font-weight: bold; margin-bottom: 8px; color: #000; }
         .opt-label { display: block; font-size: 14px; margin-bottom: 6px; cursor: pointer; color: #222; }
@@ -147,7 +146,6 @@
     let topicsData = [];
     let testResultsList = [];
 
-    // DIRECT PLAIN QUESTIONS BANK
     const DIRECT_QUESTIONS_BANK = [
         // Working at Height
         { q: "What is Working at Height? (ऊँचाई पर कार्य क्या है?)", options: ["Work above 2 metres (2 मीटर से अधिक ऊँचाई पर कार्य)", "Work below 1 metre", "Ground level work"], ans: 0 },
@@ -358,8 +356,8 @@
             <div>
                 <div class="form-group"><label>Full Name *</label><input type="text" id="workerName" class="form-control" placeholder="Enter Full Name" style="text-transform:none;"></div>
                 <div class="form-group">
-                    <label>Safety Pass Number * (Only Digits & Alphabets, Max 12 Chars)</label>
-                    <input type="text" id="safetyPassNo" class="form-control" placeholder="e.g. SP2026101" maxlength="12" oninput="formatPassNumber(this)" autocomplete="off">
+                    <label>Safety Pass Number * (Exact 12 Characters Required)</label>
+                    <input type="text" id="safetyPassNo" class="form-control" placeholder="e.g. SP2026123456" maxlength="12" oninput="formatPassNumber(this)" autocomplete="off">
                 </div>
                 <div class="form-group"><label>Vendor Name *</label><input type="text" id="vendorName" class="form-control" placeholder="Vendor / Agency" style="text-transform:none;"></div>
                 <div class="form-group"><label>Department *</label><input type="text" id="department" class="form-control" placeholder="Department" style="text-transform:none;"></div>
@@ -375,7 +373,7 @@
         document.getElementById('appModal').style.display = "flex";
     }
 
-    // STRICT FORMATTING: REMOVE SPECIAL CHARS, SPACES AND CONVERT TO UPPERCASE
+    // STRICT FORMATTING: REMOVE SPACES, SPECIAL CHARACTERS & CONVERT TO UPPERCASE
     function formatPassNumber(input) {
         input.value = input.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     }
@@ -399,11 +397,17 @@
             return;
         }
 
-        // 2. STRICT SAFETY PASS NO VALIDATION (ALPHANUMERIC & MAX 12)
-        const alphaNumericRegex = /^[A-Z0-9]{1,12}$/;
-        if (!alphaNumericRegex.test(passNo)) {
-            alert("Invalid Safety Pass Number!\nKewal Digits (0-9) aur Alphabets (A-Z) hi allowed hain, bina kisi space ya special character ke (Max 12 chars).");
-            return;
+        // 2. STRICT 12 CHARACTER LENGTH CHECK
+        if (passNo.length !== 12) {
+            alert(`Invalid Safety Pass Number!\nPass Number poore 12 characters ka hona chahiye. Aapne sirf ${passNo.length} characters daale hain.`);
+            return; // STRICT STOP
+        }
+
+        // 3. EXACT 12 ALPHANUMERIC REGEX CHECK
+        const strictTwelveRegex = /^[A-Z0-9]{12}$/;
+        if (!strictTwelveRegex.test(passNo)) {
+            alert("Invalid Safety Pass Number!\nKewal Digits (0-9) aur Alphabets (A-Z) allowed hain, exact 12 characters.");
+            return; // STRICT STOP
         }
 
         if (!checked) {
@@ -416,7 +420,7 @@
         startBtn.disabled = true;
 
         try {
-            // 3. STRICT LIVE DUPLICATE CHECK FROM FIREBASE
+            // 4. STRICT LIVE DUPLICATE CHECK FROM FIREBASE
             const snapshot = await db.collection("test_results").get();
             let isDuplicate = false;
 
@@ -431,7 +435,7 @@
                 alert(`Warning: Safety Pass Number "${passNo}" pehle se hi registered hai!\nDuplicate entry allowed nahi hai.`);
                 startBtn.innerText = "Start Examination Now";
                 startBtn.disabled = false;
-                return; // STRICT RETURN: PROCEED DONT ALLOW
+                return; // STRICT STOP
             }
 
             currentWorkerDetails = { name: name, passNo: passNo, vendor: vendor, dept: dept, date: new Date().toLocaleDateString('en-GB') };
@@ -450,7 +454,6 @@
 
         let formHTML = `<form id="examForm">`;
 
-        // ULTRA SIMPLE PLAIN HTML FOR QUESTIONS & OPTIONS
         DIRECT_QUESTIONS_BANK.forEach((qObj, index) => {
             formHTML += `
                 <div class="q-block">
