@@ -62,15 +62,22 @@
         .opt-label { display: block; font-size: 14px; margin-bottom: 6px; cursor: pointer; color: #222; }
         .opt-label input { margin-right: 8px; }
 
-        /* Answer sheet review styles */
-        .ans-review-card { border: 1px solid #ccc; border-radius: 5px; padding: 10px; margin-bottom: 10px; background: #fafafa; }
-        .ans-correct { background-color: #d4edda; border-color: #c3e6cb; }
-        .ans-wrong { background-color: #f8d7da; border-color: #f5c6cb; }
-        .ans-skipped { background-color: #fff3cd; border-color: #ffeeba; }
-        .status-tag { display: inline-block; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 3px; color: white; margin-bottom: 5px; }
-        .tag-correct { background: var(--success); }
-        .tag-wrong { background: var(--danger); }
-        .tag-skipped { background: #6c757d; }
+        /* Candidate Answer Sheet Styling */
+        .ans-card { border: 1px solid #ccc; border-radius: 6px; padding: 12px; margin-bottom: 12px; }
+        .ans-card.correct { background-color: #f0fdf4; border-color: #bbf7d0; }
+        .ans-card.wrong { background-color: #fef2f2; border-color: #fecaca; }
+        .ans-card.skipped { background-color: #fefce8; border-color: #fef08a; }
+
+        .badge-status { display: inline-block; padding: 3px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; color: white; margin-bottom: 8px; }
+        .badge-correct { background-color: var(--success); }
+        .badge-wrong { background-color: var(--danger); }
+        .badge-skipped { background-color: #6b7280; }
+
+        .opt-list { list-style: none; padding: 0; margin-top: 8px; font-size: 13px; }
+        .opt-item { padding: 6px 10px; margin-bottom: 4px; border-radius: 4px; border: 1px solid #e5e7eb; background: #ffffff; }
+        .opt-item.user-correct { background-color: #d1fae5; border-color: #10b981; font-weight: bold; color: #065f46; }
+        .opt-item.user-wrong { background-color: #fee2e2; border-color: #ef4444; font-weight: bold; color: #991b1b; }
+        .opt-item.actual-correct { background-color: #e0f2fe; border-color: #0284c7; font-weight: bold; color: #075985; }
     </style>
 </head>
 <body>
@@ -509,12 +516,12 @@
 
         let totalScore = 0;
         let totalQuestions = DIRECT_QUESTIONS_BANK.length;
-        let userAnswersMap = {};
+        let userAnswersArr = [];
 
         DIRECT_QUESTIONS_BANK.forEach((qObj, index) => {
             const selected = document.querySelector(`input[name="q_${index}"]:checked`);
             const userAns = selected ? parseInt(selected.value) : -1;
-            userAnswersMap[index] = userAns;
+            userAnswersArr.push(userAns);
             if (userAns === qObj.ans) totalScore++;
         });
 
@@ -530,7 +537,7 @@
             dept: currentWorkerDetails.dept,
             timeTaken: formattedTime,
             score: `${totalScore}/${totalQuestions}`,
-            userAnswers: userAnswersMap, // SAVING CANDIDATE ANSWERS FOR VIEW FEATURE
+            userAnswers: userAnswersArr, // STRICT ARRAY MAPPING
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
 
@@ -584,7 +591,7 @@
         });
     }
 
-    // 1. VIEW DETAILED CANDIDATE QUESTION-ANSWER SHEET
+    // VIEW DETAILED CANDIDATE RESPONSE SHEET
     function viewCandidateAnswers(resultId) {
         const record = testResultsList.find(r => r.id === resultId);
         if (!record) return alert("Record not found!");
@@ -592,44 +599,49 @@
         document.getElementById('modalTitle').innerText = `Answer Sheet: ${record.name} (${record.passNo})`;
         document.getElementById('timerBox').style.display = "none";
 
-        let userAns = record.userAnswers || {};
+        let userAns = record.userAnswers || [];
         let reviewHTML = `
-            <div style="margin-bottom:15px; background:#eee; padding:10px; border-radius:4px; font-size:13px;">
-                <p><b>Name:</b> ${record.name} | <b>Pass No:</b> ${record.passNo}</p>
+            <div style="margin-bottom:15px; background:#f1f5f9; padding:12px; border-radius:6px; font-size:13px; border:1px solid #cbd5e1;">
+                <p><b>Candidate Name:</b> ${record.name} | <b>Pass No:</b> ${record.passNo}</p>
                 <p><b>Vendor:</b> ${record.vendor} | <b>Department:</b> ${record.dept}</p>
-                <p><b>Score:</b> <span style="color:var(--primary); font-weight:bold;">${record.score}</span> | <b>Time Taken:</b> ${record.timeTaken}</p>
+                <p><b>Score:</b> <span style="color:var(--primary); font-weight:bold; font-size:15px;">${record.score}</span> | <b>Time Taken:</b> ${record.timeTaken}</p>
             </div>
-            <h4>Detailed Response Sheet:</h4><br>
+            <h4 style="margin-bottom:10px;">Question-by-Question Report:</h4>
         `;
 
         DIRECT_QUESTIONS_BANK.forEach((qObj, idx) => {
-            let candidateSelected = userAns[idx] !== undefined ? userAns[idx] : -1;
+            let candidateSelected = (userAns && userAns[idx] !== undefined) ? Number(userAns[idx]) : -1;
             let isCorrect = candidateSelected === qObj.ans;
-            let isSkipped = candidateSelected === -1;
+            let isSkipped = candidateSelected === -1 || isNaN(candidateSelected);
 
-            let cardClass = "ans-review-card " + (isSkipped ? "ans-skipped" : (isCorrect ? "ans-correct" : "ans-wrong"));
-            let tagHTML = isSkipped ? `<span class="status-tag tag-skipped">Skipped / Unanswered</span>` :
-                         (isCorrect ? `<span class="status-tag tag-correct">Correct Answer</span>` : `<span class="status-tag tag-wrong">Incorrect Answer</span>`);
+            let cardStatusClass = isSkipped ? "skipped" : (isCorrect ? "correct" : "wrong");
+            let badgeHTML = isSkipped ? `<span class="badge-status badge-skipped">Skipped / Unanswered</span>` :
+                           (isCorrect ? `<span class="badge-status badge-correct">Correct Answer</span>` : `<span class="badge-status badge-wrong">Incorrect Answer</span>`);
 
             reviewHTML += `
-                <div class="${cardClass}">
-                    ${tagHTML}
-                    <div style="font-weight:bold; font-size:14px; margin-bottom:6px;">Q${idx + 1}. ${qObj.q}</div>
-                    <ul style="padding-left:20px; font-size:13px;">
+                <div class="ans-card ${cardStatusClass}">
+                    ${badgeHTML}
+                    <div style="font-weight:bold; font-size:14px; color:#000;">Q${idx + 1}. ${qObj.q}</div>
+                    <ul class="opt-list">
                         ${qObj.options.map((opt, oIdx) => {
-                            let style = "";
-                            let note = "";
+                            let itemClass = "opt-item";
+                            let label = "";
+
                             if (oIdx === qObj.ans) {
-                                style = "color: green; font-weight: bold;";
-                                note = " (✓ Correct Answer)";
+                                itemClass += " actual-correct";
+                                label = " ✓ (Correct Answer)";
                             }
-                            if (oIdx === candidateSelected && !isCorrect) {
-                                style = "color: red; font-weight: bold;";
-                                note = " (✗ Selected Choice)";
-                            } else if (oIdx === candidateSelected && isCorrect) {
-                                note = " (Selected Choice)";
+                            if (oIdx === candidateSelected) {
+                                if (isCorrect) {
+                                    itemClass = "opt-item user-correct";
+                                    label = " ✓ (Candidate Selected)";
+                                } else {
+                                    itemClass = "opt-item user-wrong";
+                                    label = " ✗ (Candidate Selected - Wrong)";
+                                }
                             }
-                            return `<li style="${style}">${opt}${note}</li>`;
+
+                            return `<li class="${itemClass}">${opt} <b>${label}</b></li>`;
                         }).join('')}
                     </ul>
                 </div>
@@ -640,7 +652,7 @@
         document.getElementById('appModal').style.display = "flex";
     }
 
-    // 2. EDIT CANDIDATE RESULT ENTRY (ADMIN ONLY)
+    // EDIT RESULT ENTRY
     function editResultEntry(resultId) {
         const record = testResultsList.find(r => r.id === resultId);
         if (!record) return;
@@ -690,7 +702,7 @@
         }
     }
 
-    // 3. DELETE CANDIDATE RESULT ENTRY (ADMIN ONLY)
+    // DELETE RESULT ENTRY
     async function deleteResultEntry(resultId) {
         if (confirm("Kya aap sach me iss Result Entry ko DELETE karna chahte hain?")) {
             try {
