@@ -4,72 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EHS Safety Assessment Portal</title>
-    <!-- Universal PDF.js Engine -->
+    <!-- PDF.js Engine -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <style>
-        :root {
-            --primary: #0d6efd;
-            --dark: #0f172a;
-            --success: #198754;
-            --danger: #dc3545;
-            --warning: #ffc107;
-            --bg: #f8fafc;
-        }
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+    <style>
+        :root { --primary: #0d6efd; --dark: #0f172a; --success: #198754; --danger: #dc3545; --warning: #ffc107; --bg: #f8fafc; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg); color: #334155; padding-bottom: 30px; }
-
         .navbar { background: var(--dark); color: white; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
         .navbar h1 { font-size: 16px; font-weight: 600; }
         .nav-controls { display: flex; align-items: center; gap: 10px; }
         .role-badge { padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: bold; background: #475569; }
         .role-badge.admin { background: var(--warning); color: #000; }
-
         .container { max-width: 1200px; margin: 15px auto; padding: 0 12px; }
-
         .summary-card { background: white; padding: 16px; border-radius: 8px; border-left: 5px solid var(--primary); box-shadow: 0 2px 6px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; }
-
         .admin-panel { background: white; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 20px; display: none; }
         .upload-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; padding: 12px; background: #f1f5f9; border-radius: 6px; }
         .form-input { padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 14px; width: 100%; }
-
         .results-table-wrapper { overflow-x: auto; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
         th, td { padding: 8px 10px; border: 1px solid #e2e8f0; white-space: nowrap; }
         th { background: #f1f5f9; color: var(--dark); }
-
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 15px; }
         .card { background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; }
-
         .btn { padding: 12px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; text-align: center; display: inline-block; width: 100%; touch-action: manipulation; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-warning { background: var(--warning); color: #000; font-weight: bold; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-outline { border: 1px solid white; color: white; background: transparent; padding: 6px 12px; width: auto; font-size: 12px; }
-
-        /* Universal Mobile Friendly Modal */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.85); z-index: 99999; justify-content: center; align-items: flex-end; }
         @media(min-width: 600px) { .modal { align-items: center; } }
-        
         .modal-body { background: white; width: 100%; max-width: 800px; height: 90vh; border-top-left-radius: 16px; border-top-right-radius: 16px; display: flex; flex-direction: column; overflow: hidden; }
         @media(min-width: 600px) { .modal-body { border-radius: 10px; height: 85vh; width: 95%; } }
-
         .modal-header { padding: 15px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
         .timer-box { background: var(--danger); color: white; padding: 4px 10px; border-radius: 15px; font-weight: bold; font-size: 13px; }
-
         .modal-content-area { flex: 1; padding: 15px; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #f8fafc; }
-
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 13px; }
         .form-control { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 14px; }
-
         .question-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
         .topic-tag { display: inline-block; background: #e2e8f0; color: #334155; font-weight: bold; font-size: 11px; padding: 3px 8px; border-radius: 4px; margin-bottom: 8px; }
         .question-title { font-size: 14px; font-weight: 600; color: var(--dark); margin-bottom: 10px; }
         .option-item { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 8px; font-size: 14px; cursor: pointer; }
         .option-item input { width: 18px; height: 18px; }
-
         #pdfViewerContainer { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
         canvas { max-width: 100%; height: auto !important; border: 1px solid #cbd5e1; background: white; }
     </style>
@@ -87,22 +69,22 @@
 <div class="container">
     <div class="summary-card">
         <div>
-            <h3 style="font-size:16px;">Final Safety Exam (50 Questions)</h3>
-            <p style="font-size:13px; color:#64748b; margin-top:3px;">Total Topics: <b>10</b> | Time: <b>50 Minutes</b></p>
+            <h3 style="font-size:16px;">Final Safety Exam</h3>
+            <p style="font-size:13px; color:#64748b; margin-top:3px;">Time Limit: <b>50 Minutes</b></p>
         </div>
-        <button class="btn btn-warning" id="startTestBtn" onclick="openDetailsModal()">Start Final 50-Question Test</button>
+        <button class="btn btn-warning" id="startTestBtn" onclick="openDetailsModal()">Start Final Test</button>
     </div>
 
     <div class="admin-panel" id="adminPanel">
-        <h3 style="font-size:15px; margin-bottom:10px;">Admin Actions: Add Topic PDF</h3>
+        <h3 style="font-size:15px; margin-bottom:10px;">Admin Actions: Add New Training Topic</h3>
         <div class="upload-form">
             <input type="text" id="moduleTitle" class="form-input" placeholder="Topic Title (e.g., Chemical Safety)">
-            <input type="file" id="pdfFileInput" class="form-input" accept="application/pdf">
-            <button class="btn btn-primary" onclick="uploadPDF()">Upload & Add PDF</button>
+            <input type="text" id="pdfUrlInput" class="form-input" placeholder="PDF File Link (Google Drive / Direct URL)">
+            <button class="btn btn-primary" id="uploadBtn" onclick="saveTopicToServer()">Save Topic to Live Server</button>
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h4>Test Results</h4>
+            <h4>All Test Results (Live Server)</h4>
             <button class="btn btn-success" style="width:auto; padding:6px 12px; font-size:12px;" onclick="exportToCSV()">Export Excel</button>
         </div>
 
@@ -117,21 +99,19 @@
                         <th>Dept</th>
                         <th>Time</th>
                         <th>Score</th>
-                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="resultsTableBody">
-                    <tr><td colspan="8" style="text-align:center;">No records yet.</td></tr>
+                    <tr><td colspan="7" style="text-align:center;">Loading live results...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
     <h3 style="margin-bottom: 12px; color: var(--dark); font-size:16px;">Training Modules</h3>
-    <div class="grid" id="modulesGrid"></div>
+    <div class="grid" id="modulesGrid"><p style="color:#64748b;">Loading modules from server...</p></div>
 </div>
 
-<!-- Modal Container -->
 <div class="modal" id="appModal">
     <div class="modal-body">
         <div class="modal-header">
@@ -144,6 +124,20 @@
 </div>
 
 <script>
+    // ===== FIREBASE LIVE CONFIGURATION =====
+    const firebaseConfig = {
+      apiKey: "AIzaSyBzIyc_ErdL2kKpk1_kqUL6dNI4t2kDgjE",
+      authDomain: "ehs-safety-portal.firebaseapp.com",
+      projectId: "ehs-safety-portal",
+      storageBucket: "ehs-safety-portal.firebasestorage.app",
+      messagingSenderId: "868179979741",
+      appId: "1:868179979741:web:88332a0ee514e506945a34",
+      measurementId: "G-GG9QF6DB7Z"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
     if (window.pdfjsLib) {
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     }
@@ -152,84 +146,33 @@
     let timerInterval = null;
     let timeElapsedInSeconds = 0;
     let currentWorkerDetails = {};
+    let topicsData = [];
     let testResultsList = [];
 
-    let topicsData = [
-        { topicId: 1, title: "1. Working at Height", pdfArrayBuffer: null, questions: [
-            { q: "Kitni height ke upar kaam karne par Safety Harness zaroori hai?", options: ["1.8 Meters", "1.0 Meter", "3.0 Meters"], ans: 0 },
-            { q: "Full Body Harness ka Anchorage Point kaha hona chahiye?", options: ["Kamar ke neeche", "Head level / Kandhe ke upar", "Zameen par"], ans: 1 },
-            { q: "Scaffolding par kaam karne se pehle kya check karna chahiye?", options: ["Green Tag", "Red Tag", "No Tag"], ans: 0 },
-            { q: "Height work ke waqt saare tools ko kis me rakhna chahiye?", options: ["Jeb me", "Tool Bag / Tethered", "Haath me pakad ke"], ans: 1 },
-            { q: "Fragile Roof par chalne ke liye kya istemal hota hai?", options: ["Crawl Boards", "Direct roof sheet", "Wooden Plank"], ans: 0 }
-        ]},
-        { topicId: 2, title: "2. Fire Safety & PASS Method", pdfArrayBuffer: null, questions: [
-            { q: "PASS me 'P' ka matlab kya hai?", options: ["Pull the Pin", "Push the Pin", "Press Handle"], ans: 0 },
-            { q: "Electrical Fire ke liye kaun sa Extinguisher suitable hai?", options: ["Water type", "CO2 / DCP Type", "Foam Type"], ans: 1 },
-            { q: "Aag ke kitne main elements hote hain?", options: ["3 (Fuel, Heat, Oxygen)", "2", "4"], ans: 0 },
-            { q: "Fire Alarm bajne par sabse pehle kya karein?", options: ["Saman uthayen", "Nearest Evacuation Route se bahar nikle", "Lift ka use kare"], ans: 1 },
-            { q: "Assembly point par kyu ikatha hote hain?", options: ["Headcount / Attendance ke liye", "Khana khane ke liye", "Meeting ke liye"], ans: 0 }
-        ]},
-        { topicId: 3, title: "3. Confined Space Entry", pdfArrayBuffer: null, questions: [
-            { q: "Confined space entry se pehle kya zaroori hai?", options: ["Gas Testing", "Light lagana", "Direct entry"], ans: 0 },
-            { q: "Safe Oxygen level range kya hai?", options: ["19.5% - 23.5%", "10% - 15%", "25% - 30%"], ans: 0 },
-            { q: "Confined Space ke bahar kaun sa person hona zaroori hai?", options: ["Standby Attendant", "Manager", "Storekeeper"], ans: 0 },
-            { q: "Toxic gases ko nikalne ke liye kya use hota hai?", options: ["Forced Air Blower", "Water Spray", "Exhaust Fan off"], ans: 0 },
-            { q: "Emergency rescue ke liye kya ready hona chahiye?", options: ["Rescue Harness & Tripod System", "Rope ladder only", "Normal Rope"], ans: 0 }
-        ]},
-        { topicId: 4, title: "4. Electrical Safety & LOTO", pdfArrayBuffer: null, questions: [
-            { q: "LOTO ka full form kya hai?", options: ["Lockout Tagout", "Lock Open Tag Open", "Light Off Turn Off"], ans: 0 },
-            { q: "Maintenance se pehle electrical panel par kya lagayein?", options: ["Padlock Isolation", "Water Clean", "Direct repair"], ans: 0 },
-            { q: "ELCB / RCCB ka main function kya hai?", options: ["Earth Leakage Protection", "Voltage badhana", "Current save karna"], ans: 0 },
-            { q: "LOTO Key kiske paas honi chahiye?", options: ["Authorized Person jo kaam kar raha hai", "Supervisor desk", "Gate keeper"], ans: 0 },
-            { q: "Damaged Cable ka kya karna chahiye?", options: ["Immediately replace/repair", "Tape lagakar chalana", "Ignore karna"], ans: 0 }
-        ]},
-        { topicId: 5, title: "5. Chemical Safety & MSDS", pdfArrayBuffer: null, questions: [
-            { q: "MSDS ka full form kya hai?", options: ["Material Safety Data Sheet", "Main Safety Data Source", "Material Supply Sheet"], ans: 0 },
-            { q: "Chemical Handling me konsa PPE zaroori hai?", options: ["Nitrile Gloves & Goggles", "Cotton Gloves", "Normal Glasses"], ans: 0 },
-            { q: "Chemical eyes me chala jaye toh sabse pehle kya karein?", options: ["15 min Eye Wash station se dhoye", "Aankh ragde", "Oil lagaye"], ans: 0 },
-            { q: "Chemical Containers par kya hona zaroori hai?", options: ["Warning Label & Symbol", "Price Tag", "Blank Tag"], ans: 0 },
-            { q: "Flammable Chemical storage kahan hona chahiye?", options: ["Cool, ventilated & safe area", "Direct sunlight me", "Boiler room me"], ans: 0 }
-        ]},
-        { topicId: 6, title: "6. Crane & Rigging Lifting", pdfArrayBuffer: null, questions: [
-            { q: "Lifting area me kya zaroori hai?", options: ["Barrication & Warning Board", "Lighting", "Chairs"], ans: 0 },
-            { q: "Crane ke SWL ka matlab kya hai?", options: ["Safe Working Load", "Standard Weight Limit", "Small Weight Limit"], ans: 0 },
-            { q: "Lifting load ke neeche khada hona?", options: ["Strictly Prohibited", "Allowed hai", "Helmet pehan kar allowed"], ans: 0 },
-            { q: "Tag Line ka upyog kyu hota hai?", options: ["Load ko guide/control karne ke liye", "Pull karne ke liye", "Tie karne ke liye"], ans: 0 },
-            { q: "Damaged Webbing Sling ka kya karein?", options: ["Scrap/Cut karke phenk dein", "Stitch karke use karein", "Tie karke use karein"], ans: 0 }
-        ]},
-        { topicId: 7, title: "7. Excavation Safety", pdfArrayBuffer: null, questions: [
-            { q: "1.5m gehri excavation me kya required hai?", options: ["Sloping / Shoring / Benching", "Kuch nahi", "Water filling"], ans: 0 },
-            { q: "Excavated soil edge se kitni door honi chahiye?", options: ["Atleast 1 Meter", "Edge ke bilkul paas", "0.2 Meter"], ans: 0 },
-            { q: "Excavation me safe entry ke liye kya lagayein?", options: ["Ladder / Ramp", "Jump karna", "Rope only"], ans: 0 },
-            { q: "Underground utility check karne ke liye kya zaroori hai?", options: ["Cable Detector / Drawing", "Direct digging", "Guessing"], ans: 0 },
-            { q: "Night excavation area me kya lagayein?", options: ["Blinking Warning Lights & Barricade", "Darkness", "No signs"], ans: 0 }
-        ]},
-        { topicId: 8, title: "8. Hot Work & Gas Cutting", pdfArrayBuffer: null, questions: [
-            { q: "Hot work ke 10m radius me kya nahi hona chahiye?", options: ["Flammable material", "Water", "Fire Extinguisher"], ans: 0 },
-            { q: "Gas Cutting Cylinder me kya laga hona zaroori hai?", options: ["Flashback Arrestor (FBA)", "Pressure gauge remover", "Tape"], ans: 0 },
-            { q: "Hot Work ke waqt kaun sa person hona zaroori hai?", options: ["Fire Watcher", "Driver", "Helper"], ans: 0 },
-            { q: "Gas Cylinders ko kis position me rakhte hain?", options: ["Upright / Vertical position with chain", "Horizontal zameen par", "Kaise bhi"], ans: 0 },
-            { q: "Welding ke waqt face protection ke liye kya pehne?", options: ["Welding Shield / Helmet", "Safety Glasses only", "Cap"], ans: 0 }
-        ]},
-        { topicId: 9, title: "9. Personal Protective Equipment (PPE)", pdfArrayBuffer: null, questions: [
-            { q: "Head Protection ke liye kya pehnte hain?", options: ["Industrial Safety Helmet", "Cap", "Cloth"], ans: 0 },
-            { q: "Noise Level 85 dB se zyada hone par kya pehne?", options: ["Ear Plug / Ear Muff", "Cotton", "Helmet"], ans: 0 },
-            { q: "Foot Injury se bachne ke liye kya pehna jata hai?", options: ["Steel Toe Safety Shoes", "Sports Shoes", "Chappal"], ans: 0 },
-            { q: "Dusty area me respiratory protection ke liye kya use karein?", options: ["Dust Mask / Respirator", "Handkerchief", "Nothing"], ans: 0 },
-            { q: "PPE ka primary purpose kya hai?", options: ["Hazards se body ko protect karna", "Uniform dikhana", "Style ke liye"], ans: 0 }
-        ]},
-        { topicId: 10, title: "10. Environmental & Waste Management", pdfArrayBuffer: null, questions: [
-            { q: "Oil Spill hone par pehle kya use karein?", options: ["Spill Kit / Absorbent Pad", "Water wash into drain", "Soil cover only"], ans: 0 },
-            { q: "Hazardous Waste ko kahan dispose karein?", options: ["Designated Hazardous Waste Bin", "Open ground", "Normal dustbin"], ans: 0 },
-            { q: "Plastic Waste kis color ke bin me dalte hain?", options: ["Blue / Plastic Bin", "Green Bin", "Red Bin"], ans: 0 },
-            { q: "Workplace cleanliness system ko kya bolte hain?", options: ["5S System", "3S System", "Sorting"], ans: 0 },
-            { q: "Unused chemical ko nali me bahana?", options: ["Strictly Illegal & Unsafe", "Allowed", "Water mix karke allowed"], ans: 0 }
-        ]}
-    ];
-
     window.onload = function() {
-        renderModules();
+        fetchTopicsFromFirebase();
+        fetchResultsFromFirebase();
     };
+
+    function fetchTopicsFromFirebase() {
+        db.collection("modules").orderBy("timestamp", "asc").onSnapshot(snapshot => {
+            topicsData = [];
+            snapshot.forEach(doc => {
+                topicsData.push({ topicId: doc.id, ...doc.data() });
+            });
+            renderModules();
+        });
+    }
+
+    function fetchResultsFromFirebase() {
+        db.collection("test_results").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+            testResultsList = [];
+            snapshot.forEach(doc => {
+                testResultsList.push({ id: doc.id, ...doc.data() });
+            });
+            if (isAdmin) renderResultsTable();
+        });
+    }
 
     function toggleAdmin() {
         if (!isAdmin) {
@@ -258,94 +201,93 @@
     function renderModules() {
         const grid = document.getElementById('modulesGrid');
         grid.innerHTML = '';
+        if (topicsData.length === 0) {
+            grid.innerHTML = `<p style="color:#64748b;">No training modules available on server.</p>`;
+            return;
+        }
+
         topicsData.forEach(t => {
             const card = document.createElement('div');
             card.className = 'card';
             card.innerHTML = `
                 <h4 style="font-size:14px;">${t.title}</h4>
-                <p style="font-size:12px; color:#64748b;">${t.pdfArrayBuffer ? 'PDF Document Uploaded ✅' : '5 Practice Questions Available'}</p>
+                <p style="font-size:12px; color:#64748b;">${t.pdfUrl ? 'PDF Material Linked ✅' : 'Standard Training Topic'}</p>
                 <div style="display:flex; gap:8px;">
-                    <button class="btn btn-primary" onclick="readTopicPDF(${t.topicId})">Read PDF / Material</button>
-                    ${isAdmin ? `<button class="btn btn-danger" style="width:70px;" onclick="deleteModule(${t.topicId})">Delete</button>` : ''}
+                    <button class="btn btn-primary" onclick="readTopicPDF('${t.topicId}')">Read Material</button>
+                    ${isAdmin ? `<button class="btn btn-danger" style="width:70px;" onclick="deleteModule('${t.topicId}')">Delete</button>` : ''}
                 </div>
             `;
             grid.appendChild(card);
         });
     }
 
-    function uploadPDF() {
+    async function saveTopicToServer() {
         const title = document.getElementById('moduleTitle').value.trim();
-        const fileInput = document.getElementById('pdfFileInput');
+        const pdfUrl = document.getElementById('pdfUrlInput').value.trim();
 
         if (!title) return alert("Please enter topic title!");
-        if (fileInput.files.length === 0) return alert("Please select a PDF file!");
 
-        const file = fileInput.files[0];
-        const reader = new FileReader();
+        const btn = document.getElementById('uploadBtn');
+        btn.innerText = "Saving to Live Server...";
+        btn.disabled = true;
 
-        reader.onload = function(e) {
-            topicsData.push({
-                topicId: Date.now(),
+        try {
+            await db.collection("modules").add({
                 title: title,
-                pdfArrayBuffer: e.target.result,
+                pdfUrl: pdfUrl,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                 questions: [
-                    { q: `Sample Question 1 for ${title}?`, options: ["Correct Answer", "Option B", "Option C"], ans: 0 },
-                    { q: `Sample Question 2 for ${title}?`, options: ["Option A", "Correct Answer", "Option C"], ans: 1 },
-                    { q: `Sample Question 3 for ${title}?`, options: ["Option A", "Option B", "Correct Answer"], ans: 2 },
-                    { q: `Sample Question 4 for ${title}?`, options: ["Correct Answer", "Option B", "Option C"], ans: 0 },
-                    { q: `Sample Question 5 for ${title}?`, options: ["Option A", "Correct Answer", "Option C"], ans: 1 }
+                    { q: `Question 1 for ${title}?`, options: ["Correct Answer", "Option B", "Option C"], ans: 0 },
+                    { q: `Question 2 for ${title}?`, options: ["Option A", "Correct Answer", "Option C"], ans: 1 },
+                    { q: `Question 3 for ${title}?`, options: ["Option A", "Option B", "Correct Answer"], ans: 2 }
                 ]
             });
-            renderModules();
+
             document.getElementById('moduleTitle').value = '';
-            fileInput.value = '';
-            alert("New Topic PDF uploaded!");
-        };
-
-        reader.readAsArrayBuffer(file);
-    }
-
-    function deleteModule(topicId) {
-        if (confirm("Delete this module?")) {
-            topicsData = topicsData.filter(t => t.topicId !== topicId);
-            renderModules();
+            document.getElementById('pdfUrlInput').value = '';
+            alert("New Module added successfully to Live Server!");
+        } catch (error) {
+            alert("Error saving: " + error.message);
+        } finally {
+            btn.innerText = "Save Topic to Live Server";
+            btn.disabled = false;
         }
     }
 
-    function readTopicPDF(id) {
-        const topic = topicsData.find(t => t.topicId === id);
+    async function deleteModule(topicId) {
+        if (confirm("Delete this module from Server?")) {
+            await db.collection("modules").doc(topicId).delete();
+            alert("Module deleted!");
+        }
+    }
+
+    function readTopicPDF(topicId) {
+        const topic = topicsData.find(t => t.topicId === topicId);
         if (!topic) return;
 
         document.getElementById('modalTitle').innerText = topic.title;
         document.getElementById('timerBox').style.display = "none";
-        
         const content = document.getElementById('modalContent');
 
-        if (topic.pdfArrayBuffer) {
+        if (topic.pdfUrl) {
             content.innerHTML = `<div id="pdfViewerContainer"><p style="color:#64748b;">Loading document...</p></div>`;
-            renderUniversalPDF(topic.pdfArrayBuffer);
+            renderUniversalPDFFromUrl(topic.pdfUrl);
         } else {
-            content.innerHTML = `
-                <div style="text-align:center; padding: 30px; background:white; border-radius:8px;">
-                    <h4>${topic.title}</h4>
-                    <p style="margin-top:10px; color:#64748b; font-size:13px;">No direct PDF uploaded. Study topic material from training manual.</p>
-                </div>
-            `;
+            content.innerHTML = `<div style="text-align:center; padding: 30px;"><h4>${topic.title}</h4><p style="color:#64748b;">No PDF link uploaded for this topic.</p></div>`;
         }
 
         document.getElementById('appModal').style.display = "flex";
     }
 
-    function renderUniversalPDF(arrayBuffer) {
+    function renderUniversalPDFFromUrl(url) {
         const container = document.getElementById('pdfViewerContainer');
         container.innerHTML = '';
 
-        pdfjsLib.getDocument({ data: arrayBuffer }).promise.then(pdf => {
+        pdfjsLib.getDocument(url).promise.then(pdf => {
             for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                 pdf.getPage(pageNum).then(page => {
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
-                    
                     const screenWidth = Math.min(window.innerWidth - 40, 700);
                     const unscaledViewport = page.getViewport({ scale: 1.0 });
                     const scale = screenWidth / unscaledViewport.width;
@@ -355,15 +297,11 @@
                     canvas.width = viewport.width;
 
                     container.appendChild(canvas);
-
-                    page.render({
-                        canvasContext: context,
-                        viewport: viewport
-                    });
+                    page.render({ canvasContext: context, viewport: viewport });
                 });
             }
         }).catch(err => {
-            container.innerHTML = `<p style="color:red; font-size:13px;">Error rendering PDF: ${err.message}</p>`;
+            container.innerHTML = `<p style="color:red; font-size:13px;">Error loading PDF. Make sure the PDF URL is public.</p>`;
         });
     }
 
@@ -374,22 +312,10 @@
         const content = document.getElementById('modalContent');
         content.innerHTML = `
             <div style="background:white; padding:15px; border-radius:8px;">
-                <div class="form-group">
-                    <label>Full Name *</label>
-                    <input type="text" id="workerName" class="form-control" placeholder="Enter Full Name">
-                </div>
-                <div class="form-group">
-                    <label>Safety Pass Number *</label>
-                    <input type="text" id="safetyPassNo" class="form-control" placeholder="e.g. SP-2026-101">
-                </div>
-                <div class="form-group">
-                    <label>Vendor Name *</label>
-                    <input type="text" id="vendorName" class="form-control" placeholder="Vendor / Agency">
-                </div>
-                <div class="form-group">
-                    <label>Department *</label>
-                    <input type="text" id="department" class="form-control" placeholder="Department">
-                </div>
+                <div class="form-group"><label>Full Name *</label><input type="text" id="workerName" class="form-control" placeholder="Enter Full Name"></div>
+                <div class="form-group"><label>Safety Pass Number *</label><input type="text" id="safetyPassNo" class="form-control" placeholder="e.g. SP-2026-101"></div>
+                <div class="form-group"><label>Vendor Name *</label><input type="text" id="vendorName" class="form-control" placeholder="Vendor / Agency"></div>
+                <div class="form-group"><label>Department *</label><input type="text" id="department" class="form-control" placeholder="Department"></div>
                 <div style="margin: 15px 0;">
                     <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600;">
                         <input type="checkbox" id="readDeclaration" style="width:18px; height:18px;">
@@ -410,29 +336,15 @@
         const dept = document.getElementById('department').value.trim();
         const checked = document.getElementById('readDeclaration').checked;
 
-        if (!name || !passNo || !vendor || !dept) {
-            alert("Kripya saare Details bharein!");
-            return;
-        }
+        if (!name || !passNo || !vendor || !dept) return alert("Kripya saare Details bharein!");
+        if (!checked) return alert("Kripya checkbox par tick karein!");
 
-        if (!checked) {
-            alert("Kripya checkbox par tick karein!");
-            return;
-        }
-
-        currentWorkerDetails = {
-            name: name,
-            passNo: passNo,
-            vendor: vendor,
-            dept: dept,
-            date: new Date().toLocaleDateString('en-GB')
-        };
-
+        currentWorkerDetails = { name: name, passNo: passNo, vendor: vendor, dept: dept, date: new Date().toLocaleDateString('en-GB') };
         startCombinedTest();
     }
 
     function startCombinedTest() {
-        document.getElementById('modalTitle').innerText = "Safety Test (50 Questions)";
+        document.getElementById('modalTitle').innerText = "Safety Test";
         document.getElementById('timerBox').style.display = "block";
         const content = document.getElementById('modalContent');
 
@@ -440,27 +352,27 @@
         let qCounter = 1;
 
         topicsData.forEach(topic => {
-            topic.questions.forEach((qObj, qIdx) => {
-                formHTML += `
-                    <div class="question-card">
-                        <span class="topic-tag">${topic.title}</span>
-                        <div class="question-title">${qCounter}. ${qObj.q}</div>
-                        ${qObj.options.map((opt, oIdx) => `
-                            <label class="option-item">
-                                <input type="radio" name="q_${topic.topicId}_${qIdx}" value="${oIdx}">
-                                <span>${opt}</span>
-                            </label>
-                        `).join('')}
-                    </div>
-                `;
-                qCounter++;
-            });
+            if (topic.questions) {
+                topic.questions.forEach((qObj, qIdx) => {
+                    formHTML += `
+                        <div class="question-card">
+                            <span class="topic-tag">${topic.title}</span>
+                            <div class="question-title">${qCounter}. ${qObj.q}</div>
+                            ${qObj.options.map((opt, oIdx) => `
+                                <label class="option-item">
+                                    <input type="radio" name="q_${topic.topicId}_${qIdx}" value="${oIdx}">
+                                    <span>${opt}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    `;
+                    qCounter++;
+                });
+            }
         });
 
         formHTML += `<button type="button" class="btn btn-success" style="padding:15px; font-size:16px; margin-bottom:20px;" onclick="submitExam()">Submit Final Exam</button></form>`;
         content.innerHTML = formHTML;
-
-        // Scroll modal back to top
         document.getElementById('modalContent').scrollTop = 0;
 
         startTimer();
@@ -474,7 +386,6 @@
         timerInterval = setInterval(() => {
             timeElapsedInSeconds++;
             remainingSeconds--;
-
             let m = Math.floor(remainingSeconds / 60);
             let s = remainingSeconds % 60;
             document.getElementById('timeRemaining').innerText = `${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}`;
@@ -487,29 +398,21 @@
         }, 1000);
     }
 
-    function submitExam() {
+    async function submitExam() {
         clearInterval(timerInterval);
 
         let totalScore = 0;
-        let answersLog = [];
+        let totalQuestions = 0;
 
         topicsData.forEach(topic => {
-            topic.questions.forEach((qObj, qIdx) => {
-                const selected = document.querySelector(`input[name="q_${topic.topicId}_${qIdx}"]:checked`);
-                const userAns = selected ? parseInt(selected.value) : -1;
-                const isCorrect = userAns === qObj.ans;
-
-                if (isCorrect) totalScore++;
-
-                answersLog.push({
-                    topic: topic.title,
-                    question: qObj.q,
-                    options: qObj.options,
-                    userAns: userAns,
-                    correctAns: qObj.ans,
-                    isCorrect: isCorrect
+            if (topic.questions) {
+                topic.questions.forEach((qObj, qIdx) => {
+                    totalQuestions++;
+                    const selected = document.querySelector(`input[name="q_${topic.topicId}_${qIdx}"]:checked`);
+                    const userAns = selected ? parseInt(selected.value) : -1;
+                    if (userAns === qObj.ans) totalScore++;
                 });
-            });
+            }
         });
 
         let mins = Math.floor(timeElapsedInSeconds / 60);
@@ -517,19 +420,21 @@
         let formattedTime = `${mins}m ${secs}s`;
 
         const resultRecord = {
-            id: Date.now(),
             date: currentWorkerDetails.date,
             name: currentWorkerDetails.name,
             passNo: currentWorkerDetails.passNo,
             vendor: currentWorkerDetails.vendor,
             dept: currentWorkerDetails.dept,
             timeTaken: formattedTime,
-            score: `${totalScore}/50`,
-            answers: answersLog
+            score: `${totalScore}/${totalQuestions}`,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
 
-        testResultsList.push(resultRecord);
-        if (isAdmin) renderResultsTable();
+        try {
+            await db.collection("test_results").add(resultRecord);
+        } catch (e) {
+            console.error("Error saving result: ", e);
+        }
 
         document.getElementById('timerBox').style.display = "none";
         document.getElementById('modalTitle').innerText = "Exam Result";
@@ -539,7 +444,7 @@
                 <hr style="margin:12px 0;">
                 <p style="font-size:14px;">Candidate: <b>${currentWorkerDetails.name}</b></p>
                 <p style="font-size:14px;">Pass No: <b>${currentWorkerDetails.passNo}</b></p>
-                <p style="font-size:22px; margin:15px 0; color:var(--primary);"><b>${totalScore} / 50</b></p>
+                <p style="font-size:22px; margin:15px 0; color:var(--primary);"><b>${totalScore} / ${totalQuestions}</b></p>
                 <p style="font-size:13px;">Time Taken: <b>${formattedTime}</b></p>
                 <button class="btn btn-primary" style="margin-top:20px;" onclick="closeModal()">Close</button>
             </div>
@@ -551,52 +456,23 @@
         tbody.innerHTML = '';
 
         if (testResultsList.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No test results recorded yet.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No test results recorded on server.</td></tr>`;
             return;
         }
 
         testResultsList.forEach(res => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${res.date}</td>
+                <td>${res.date || ''}</td>
                 <td><b>${res.name}</b></td>
                 <td>${res.passNo}</td>
                 <td>${res.vendor}</td>
                 <td>${res.dept}</td>
                 <td>${res.timeTaken}</td>
                 <td><b>${res.score}</b></td>
-                <td><button class="btn btn-primary" style="padding:4px 8px; font-size:11px;" onclick="viewCandidateSheet(${res.id})">View</button></td>
             `;
             tbody.appendChild(tr);
         });
-    }
-
-    function viewCandidateSheet(recordId) {
-        const record = testResultsList.find(r => r.id === recordId);
-        if (!record) return;
-
-        document.getElementById('modalTitle').innerText = `${record.name} (${record.score})`;
-        document.getElementById('timerBox').style.display = "none";
-
-        let html = `<div style="background:white; padding:12px; border-radius:6px; margin-bottom:12px; font-size:13px;">
-            <p><b>Vendor:</b> ${record.vendor} | <b>Dept:</b> ${record.dept}</p>
-        </div>`;
-
-        record.answers.forEach((ans, idx) => {
-            html += `
-                <div style="background:white; padding:12px; border-radius:6px; margin-bottom:10px; border-left:4px solid ${ans.isCorrect ? 'var(--success)' : 'var(--danger)'}">
-                    <span class="topic-tag">${ans.topic}</span>
-                    <p style="font-weight:600; font-size:13px;">${idx + 1}. ${ans.question}</p>
-                    <p style="font-size:12px; color:${ans.isCorrect ? 'green' : 'red'}; margin-top:4px;">
-                        Ans: ${ans.userAns >= 0 ? ans.options[ans.userAns] : 'Not Answered'} 
-                        ${ans.isCorrect ? '✅' : `❌ (Correct: ${ans.options[ans.correctAns]})`}
-                    </p>
-                </div>
-            `;
-        });
-
-        document.getElementById('modalContent').innerHTML = html;
-        document.getElementById('appModal').style.display = "flex";
     }
 
     function exportToCSV() {
