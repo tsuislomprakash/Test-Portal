@@ -52,7 +52,7 @@
         
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; }
-        .form-control { width: 100%; padding: 8px; border: 1px solid #ccc; font-size: 14px; }
+        .form-control { width: 100%; padding: 8px; border: 1px solid #ccc; font-size: 14px; text-transform: uppercase; }
 
         /* ULTRA SIMPLE PLAIN QUESTION STYLING */
         .q-block { border-bottom: 1px solid #ddd; padding-bottom: 15px; margin-bottom: 15px; }
@@ -147,7 +147,7 @@
     let topicsData = [];
     let testResultsList = [];
 
-    // DIRECT PLAIN QUESTIONS BANK (NO TOPIC CARDS / TAGS)
+    // DIRECT PLAIN QUESTIONS BANK
     const DIRECT_QUESTIONS_BANK = [
         // Working at Height
         { q: "What is Working at Height? (ऊँचाई पर कार्य क्या है?)", options: ["Work above 2 metres (2 मीटर से अधिक ऊँचाई पर कार्य)", "Work below 1 metre", "Ground level work"], ans: 0 },
@@ -356,34 +356,75 @@
         const content = document.getElementById('modalContent');
         content.innerHTML = `
             <div>
-                <div class="form-group"><label>Full Name *</label><input type="text" id="workerName" class="form-control" placeholder="Enter Full Name"></div>
-                <div class="form-group"><label>Safety Pass Number *</label><input type="text" id="safetyPassNo" class="form-control" placeholder="e.g. SP-2026-101"></div>
-                <div class="form-group"><label>Vendor Name *</label><input type="text" id="vendorName" class="form-control" placeholder="Vendor / Agency"></div>
-                <div class="form-group"><label>Department *</label><input type="text" id="department" class="form-control" placeholder="Department"></div>
+                <div class="form-group"><label>Full Name *</label><input type="text" id="workerName" class="form-control" placeholder="Enter Full Name" style="text-transform:none;"></div>
+                <div class="form-group">
+                    <label>Safety Pass Number * (Max 12 Alphanumeric Digits)</label>
+                    <input type="text" id="safetyPassNo" class="form-control" placeholder="e.g. SP2026101" maxlength="12" oninput="formatPassNumber(this)">
+                </div>
+                <div class="form-group"><label>Vendor Name *</label><input type="text" id="vendorName" class="form-control" placeholder="Vendor / Agency" style="text-transform:none;"></div>
+                <div class="form-group"><label>Department *</label><input type="text" id="department" class="form-control" placeholder="Department" style="text-transform:none;"></div>
                 <div style="margin: 15px 0;">
                     <label style="font-size:13px; font-weight:bold;">
                         <input type="checkbox" id="readDeclaration"> Maine safety rules padh liye hain.
                     </label>
                 </div>
-                <button type="button" class="btn btn-success" onclick="validateAndStartTest()">Start Examination Now</button>
+                <button type="button" id="startExamBtn" class="btn btn-success" onclick="validateAndStartTest()">Start Examination Now</button>
             </div>
         `;
 
         document.getElementById('appModal').style.display = "flex";
     }
 
-    function validateAndStartTest() {
+    // FORMAT & RESTRICT SAFETY PASS NUMBER (ALPHA-NUMERIC ONLY, MAX 12, AUTO UPPERCASE)
+    function formatPassNumber(input) {
+        let cleanVal = input.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        if (cleanVal.length > 12) {
+            cleanVal = cleanVal.substring(0, 12);
+        }
+        input.value = cleanVal;
+    }
+
+    async function validateAndStartTest() {
         const name = document.getElementById('workerName').value.trim();
-        const passNo = document.getElementById('safetyPassNo').value.trim();
+        const passNo = document.getElementById('safetyPassNo').value.trim().toUpperCase();
         const vendor = document.getElementById('vendorName').value.trim();
         const dept = document.getElementById('department').value.trim();
         const checked = document.getElementById('readDeclaration').checked;
 
         if (!name || !passNo || !vendor || !dept) return alert("Kripya saare Details bharein!");
+        if (passNo.length > 12) return alert("Safety Pass Number me max 12 characters hi allowed hain!");
         if (!checked) return alert("Kripya checkbox par tick karein!");
 
-        currentWorkerDetails = { name: name, passNo: passNo, vendor: vendor, dept: dept, date: new Date().toLocaleDateString('en-GB') };
-        startCombinedTest();
+        const startBtn = document.getElementById('startExamBtn');
+        startBtn.innerText = "Checking Details...";
+        startBtn.disabled = true;
+
+        try {
+            // DUPLICATE PASS NUMBER CHECK (CASE-INSENSITIVE)
+            const snapshot = await db.collection("test_results").get();
+            let isDuplicate = false;
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.passNo && data.passNo.toString().trim().toUpperCase() === passNo) {
+                    isDuplicate = true;
+                }
+            });
+
+            if (isDuplicate) {
+                alert(`Warning: Safety Pass Number "${passNo}" pehle se hi registered hai!\nDuplicate entry allowed nahi hai.`);
+                startBtn.innerText = "Start Examination Now";
+                startBtn.disabled = false;
+                return;
+            }
+
+            currentWorkerDetails = { name: name, passNo: passNo, vendor: vendor, dept: dept, date: new Date().toLocaleDateString('en-GB') };
+            startCombinedTest();
+        } catch (error) {
+            alert("Error checking pass number: " + error.message);
+            startBtn.innerText = "Start Examination Now";
+            startBtn.disabled = false;
+        }
     }
 
     function startCombinedTest() {
