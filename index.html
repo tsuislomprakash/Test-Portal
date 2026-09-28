@@ -58,11 +58,12 @@
         .form-control { width: 100%; padding: 8px; border: 1px solid #ccc; font-size: 14px; text-transform: uppercase; }
 
         .q-block { border-bottom: 1px solid #ddd; padding-bottom: 15px; margin-bottom: 15px; }
-        .q-text { font-size: 15px; font-weight: bold; margin-bottom: 8px; color: #000; }
+        .q-text-en { font-size: 15px; font-weight: bold; color: #000; }
+        .q-text-hi { font-size: 14px; color: #4b5563; margin-bottom: 8px; font-weight: 600; }
         .opt-label { display: block; font-size: 14px; margin-bottom: 6px; cursor: pointer; color: #222; }
         .opt-label input { margin-right: 8px; }
 
-        /* Candidate Answer Sheet Styling */
+        /* Candidate Answer Sheet & Master Bank Styling */
         .ans-card { border: 1px solid #ccc; border-radius: 6px; padding: 12px; margin-bottom: 12px; }
         .ans-card.correct { background-color: #f0fdf4; border-color: #bbf7d0; }
         .ans-card.wrong { background-color: #fef2f2; border-color: #fecaca; }
@@ -98,14 +99,19 @@
     </div>
 
     <div class="admin-panel" id="adminPanel">
-        <h3 style="font-size:15px; margin-bottom:10px;">Admin Actions: Add New Training Topic</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
+            <h3 style="font-size:16px; color:var(--dark);">Admin Dashboard</h3>
+            <button class="btn btn-info" onclick="viewMasterQuestionBank()">View Master Question Bank (Correct Answers)</button>
+        </div>
+
+        <h4 style="font-size:14px; margin-bottom:8px;">Add New Training Topic</h4>
         <div class="upload-form">
             <input type="text" id="moduleTitle" class="form-input" placeholder="Topic Title (e.g., Working at Height)">
             <input type="text" id="pdfUrlInput" class="form-input" placeholder="Google Drive / Direct PDF URL">
             <button class="btn btn-primary" id="uploadBtn" onclick="saveTopicToServer()">Save Topic to Live Server</button>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; margin-top: 20px;">
             <h4>All Test Results (Live Server)</h4>
             <button class="btn btn-success" style="width:auto; padding:6px 12px; font-size:12px;" onclick="exportToCSV()">Export Excel</button>
         </div>
@@ -153,7 +159,7 @@
       projectId: "ehs-safety-portal",
       storageBucket: "ehs-safety-portal.firebasestorage.app",
       messagingSenderId: "868179979741",
-      appId: "1:868179979741:web:88332a0ee514e506945a34",
+      appId: "1:88332a0ee514e506945a34",
       measurementId: "G-GG9QF6DB7Z"
     };
 
@@ -167,76 +173,77 @@
     let topicsData = [];
     let testResultsList = [];
 
+    // Questions in Hindi & English, Options strictly English
     const DIRECT_QUESTIONS_BANK = [
         // Working at Height
-        { q: "What is Working at Height? (ऊँचाई पर कार्य क्या है?)", options: ["Work above 2 metres (2 मीटर से अधिक ऊँचाई पर कार्य)", "Work below 1 metre", "Ground level work"], ans: 0 },
-        { q: "Which harness is allowed? (कौन सा हार्नेस मान्य है?)", options: ["Single strap", "Full Body Harness (फुल बॉडी हार्नेस)", "Body Belt"], ans: 1 },
-        { q: "What is the minimum strength of an anchorage? (एंकरेज की न्यूनतम क्षमता कितनी होनी चाहिए?)", options: ["500 kg per person", "1000 kg per person", "2000 kg per person (प्रति व्यक्ति 2000 किलोग्राम)"], ans: 2 },
-        { q: "What should be worn during height work? (ऊँचाई पर कार्य के दौरान क्या पहनना चाहिए?)", options: ["Helmet, Harness, Double lanyard, Safety shoes", "Only Helmet", "Only Safety Shoes"], ans: 0 },
-        { q: "What should you do if conditions become unsafe? (यदि स्थितियां असुरक्षित हो जाएं तो क्या करें?)", options: ["Continue work", "Stop work and inform supervisor (कार्य रोकें और सुपरवाइजर को सूचित करें)", "Ignore conditions"], ans: 1 },
+        { qEn: "What is Working at Height?", qHi: "ऊंचाई पर कार्य (Working at Height) किसे माना जाता है?", options: ["Work above 2 metres", "Work below 1 metre", "Ground level work", "Underground work"], ans: 0 },
+        { qEn: "Which harness is allowed for safety?", qHi: "सुरक्षा के लिए कौन सी हार्नेस (Harness) की अनुमति है?", options: ["Single strap belt", "Full Body Harness with double lanyard", "Simple waist belt", "Rope harness"], ans: 1 },
+        { qEn: "What is the minimum strength required for an anchorage point?", qHi: "एंकरेज पॉइंट (Anchorage Point) के लिए न्यूनतम क्षमता कितनी होनी चाहिए?", options: ["500 kg per person", "1000 kg per person", "2000 kg per person", "3000 kg per person"], ans: 2 },
+        { qEn: "What PPE should be worn during height work?", qHi: "ऊंचाई पर काम करते समय कौन सा PPE पहना जाना चाहिए?", options: ["Helmet, Harness, Double lanyard, Safety shoes", "Only Helmet and Safety Shoes", "Only Safety Shoes and Gloves", "Simple jacket"], ans: 0 },
+        { qEn: "What should you do if site conditions become unsafe at height?", qHi: "यदि ऊंचाई पर काम की स्थिति असुरक्षित हो जाए तो आपको क्या करना चाहिए?", options: ["Continue work carefully", "Stop work and inform supervisor immediately", "Ignore conditions and finish fast", "Ask coworker to take over"], ans: 1 },
 
         // Work Permit
-        { q: "What is a Work Permit? (वर्क परमिट क्या है?)", options: ["Attendance sheet", "Written authorization for safe work (सुरक्षित कार्य हेतु लिखित अनुमति)", "Purchase order", "Inspection report"], ans: 1 },
-        { q: "\"No Permit = No Work\" means: (\"वर्क परमिट नहीं = काम नहीं\" का अर्थ?)", options: ["Work can continue", "Job shall not start (काम शुरू नहीं होगा)", "Ignore permit", "Supervisor decides later"], ans: 1 },
-        { q: "Permit Issued By: (परमिट कौन जारी करता है?)", options: ["Working Agency", "Owner Agency (ओनर एजेंसी)", "Contractor", "Visitor"], ans: 1 },
-        { q: "Hot work includes: (हॉट वर्क में क्या शामिल है?)", options: ["Welding", "Gas Cutting", "Grinding", "All of the above (उपरोक्त सभी)"], ans: 3 },
-        { q: "The most important Work Permit rule is: (वर्क परमिट का सबसे महत्वपूर्ण नियम?)", options: ["Hurry work", "Follow permit conditions (परमिट की शर्तों का पालन करें)", "Ignore SOP", "Save time"], ans: 1 },
+        { qEn: "What is a Work Permit?", qHi: "वर्क परमिट (Work Permit) क्या है?", options: ["Attendance sheet for workers", "Written authorization for safe execution of work", "Material purchase order", "Inspection report"], ans: 1 },
+        { qEn: "What does \"No Permit = No Work\" mean?", qHi: "\"No Permit = No Work\" का क्या अर्थ है?", options: ["Work can continue without permit", "Job shall not start without a valid permit", "Permit is optional for short tasks", "Supervisor can verbally approve work"], ans: 1 },
+        { qEn: "Who issues the Work Permit?", qHi: "वर्क परमिट कौन जारी करता है?", options: ["Contractor Agency", "Owner Agency / Issuing Authority", "Third party visitor", "New joining worker"], ans: 1 },
+        { qEn: "Which of the following activities require a Hot Work Permit?", qHi: "निम्नलिखित में से किस कार्य के लिए हॉट वर्क परमिट आवश्यक है?", options: ["Welding and Grinding", "Gas Cutting", "Soldering", "All of the above"], ans: 3 },
+        { qEn: "What is the most important rule regarding Work Permit?", qHi: "वर्क परमिट से संबंधित सबसे महत्वपूर्ण नियम क्या है?", options: ["Finish work in hurry", "Comply with all permit conditions strictly", "Bypass safety precautions to save time", "Transfer permit to another team"], ans: 1 },
 
         // Welding & Gas Cutting
-        { q: "Before welding, which permit is mandatory? (वेल्डिंग से पहले कौन सा परमिट आवश्यक है?)", options: ["Work Permit", "Hot Work Permit", "Both (दोनों)", "None"], ans: 2 },
-        { q: "Flashback arrestor is used to: (फ्लैशबैक अरेस्टर का उपयोग किसलिए होता है?)", options: ["Prevent explosion (धमाके/विस्फोट को रोकने के लिए)", "Increase pressure", "Cool cylinder", "Paint torch"], ans: 0 },
-        { q: "Minimum distance between oxygen and fuel gas cylinders: (ऑक्सीजन और ईंधन गैस सिलेंडर के बीच न्यूनतम दूरी?)", options: ["1 meter", "2 meter", "3 meter (3 मीटर)", "5 meter"], ans: 2 },
-        { q: "Fuel gas hose colour is: (फ्यूल गैस होज का रंग क्या है?)", options: ["Black", "Red (लाल)", "Yellow", "Green"], ans: 1 },
-        { q: "Cylinders inside confined space are: (कन्फाइंड स्पेस में गैस सिलेंडर रखना:)", options: ["Allowed", "Not Allowed (अनुमति नहीं है)", "Recommended", "Temporary"], ans: 1 },
+        { qEn: "Before starting welding work, which permit is mandatory?", qHi: "वेल्डिंग का काम शुरू करने से पहले कौन सा परमिट अनिवार्य है?", options: ["Cold Work Permit", "Height Work Permit", "Hot Work Permit", "Vehicle Entry Permit"], ans: 2 },
+        { qEn: "What is the function of a Flashback Arrestor?", qHi: "फ्लैशबैक अरेस्टर (Flashback Arrestor) का क्या कार्य है?", options: ["To prevent reverse gas flow and cylinder explosion", "To increase pressure in torch", "To cool down the gas cylinder", "To clean the welding tip"], ans: 0 },
+        { qEn: "What is the minimum required distance between Oxygen and Fuel gas cylinders?", qHi: "ऑक्सीजन और फ्यूल गैस सिलेंडर के बीच न्यूनतम दूरी कितनी होनी चाहिए?", options: ["1 metre", "2 metres", "3 metres", "5 metres"], ans: 2 },
+        { qEn: "What is the standard color code for Fuel Gas hoses?", qHi: "फ्यूल गैस होज़ (Fuel Gas Hose) का मानक रंग कोड क्या है?", options: ["Black", "Red", "Yellow", "Green"], ans: 1 },
+        { qEn: "Are gas cylinders allowed inside a confined space?", qHi: "क्या कन्फाइंड स्पेस (Confined Space) के अंदर गैस सिलेंडर ले जाने की अनुमति है?", options: ["Allowed with permission", "Strictly Not Allowed", "Allowed if kept upright", "Allowed for 1 hour"], ans: 1 },
 
         // Road & Rail Safety
-        { q: "What is the OHE voltage present above electrified railway tracks? (रेल लाइन के ऊपर OHE का वोल्टेज?)", options: ["440 Volt", "11 KV", "25 KV (25 केवी)", "33 KV"], ans: 2 },
-        { q: "Mobile phone use while driving is: (वाहन चलाते समय मोबाइल फोन का उपयोग:)", options: ["Allowed", "Safe", "Prohibited (प्रतिबंधित/अमान्य)", "Recommended"], ans: 2 },
-        { q: "Three-point contact means: (थ्री-पॉइंट कॉन्टैक्ट का अर्थ क्या है?)", options: ["One hand and two fingers", "Two hands and one foot or two feet and one hand", "One foot and one hand", "Jumping"], ans: 1 },
-        { q: "Forklift maximum permitted speed inside plant is: (प्लांट के अंदर फोर्कलिफ्ट की अधिकतम गति?)", options: ["15 kmph", "10 kmph (10 किमी/घंटा)", "20 kmph", "25 kmph"], ans: 1 },
-        { q: "Standing on top of locomotives under OHE is: (OHE क्षेत्र में लोको के ऊपर खड़ा होना:)", options: ["Allowed", "Allowed with permission", "Unsafe and prohibited (असुरक्षित और प्रतिबंधित)", "Recommended"], ans: 2 },
+        { qEn: "What is the OHE voltage present above electrified railway tracks?", qHi: "रेलवे ट्रैक के ऊपर लगे OHE लाइन में कितना वोल्टेज होता है?", options: ["440 Volts", "11 KV", "25 KV", "33 KV"], ans: 2 },
+        { qEn: "Using a mobile phone while driving inside plant premises is:", qHi: "प्लांट परिसर के अंदर ड्राइविंग करते समय मोबाइल का उपयोग करना:", options: ["Allowed using hands-free", "Safe at low speed", "Strictly Prohibited", "Allowed during daytime only"], ans: 2 },
+        { qEn: "What does Three-Point Contact mean while climbing equipment?", qHi: "इक्विपमेंट पर चढ़ते समय थ्री-पॉइंट कांटेक्ट (3-Point Contact) का क्या अर्थ है?", options: ["One hand and two fingers", "Two hands and one foot OR two feet and one hand", "One foot and one hand", "Both hands free"], ans: 1 },
+        { qEn: "What is the maximum permitted speed for Forklifts inside plant area?", qHi: "प्लांट क्षेत्र के अंदर फोर्कलिफ्ट की अधिकतम गति सीमा क्या है?", options: ["15 kmph", "10 kmph", "20 kmph", "25 kmph"], ans: 1 },
+        { qEn: "Standing or sitting on top of locomotives under OHE line is:", qHi: "OHE लाइन के नीचे लोकोमोटिव के ऊपर खड़े होना या बैठना:", options: ["Allowed during maintenance", "Allowed with helmet", "Unsafe and Strictly Prohibited", "Allowed in emergency"], ans: 2 },
 
         // PPE
-        { q: "PPE stands for: (PPE का पूर्ण रूप क्या है?)", options: ["Personal Protective Equipment", "Personal Protection Engine", "Protective Plant Equipment", "None"], ans: 0 },
-        { q: "Ear protection is required above: (किस शोर स्तर से ऊपर कान सुरक्षा आवश्यक है?)", options: ["50 dB", "60 dB", "85 dB (85 डीबी)", "120 dB"], ans: 2 },
-        { q: "Damaged PPE should be: (क्षतिग्रस्त PPE का क्या करना चाहिए?)", options: ["Continue using", "Repair with tape", "Replace (बदलें)", "Ignore"], ans: 2 },
-        { q: "SCBA is used for: (SCBA का उपयोग कहाँ होता है?)", options: ["Noise area", "Toxic gas area (जहरीली गैस वाले क्षेत्र में)", "General inspection", "None"], ans: 1 },
-        { q: "The most important PPE rule is: (सबसे महत्वपूर्ण PPE नियम क्या है?)", options: ["Wear PPE correctly (PPE सही तरीके से पहनें)", "Ignore damage", "Remove PPE frequently", "None"], ans: 0 },
+        { qEn: "What does PPE stand for?", qHi: "PPE का पूर्ण रूप (Full Form) क्या है?", options: ["Personal Protective Equipment", "Personal Protection Engine", "Protective Plant Equipment", "Plant Performance Evaluation"], ans: 0 },
+        { qEn: "Ear protection (Ear plugs/muffs) is mandatory above what noise level?", qHi: "किस शोर स्तर (Noise Level) से ऊपर कान की सुरक्षा (Ear Plug/Muff) अनिवार्य है?", options: ["50 dB", "60 dB", "85 dB", "120 dB"], ans: 2 },
+        { qEn: "What should be done with damaged or worn-out PPE?", qHi: "खराब या क्षतिग्रस्त PPE के साथ क्या किया जाना चाहिए?", options: ["Keep using until completely broken", "Repair with adhesive tape", "Replace immediately with a new one", "Give to another worker"], ans: 2 },
+        { qEn: "Self-Contained Breathing Apparatus (SCBA) is used in:", qHi: "SCBA का उपयोग किस स्थिति में किया जाता है?", options: ["High noise areas", "Toxic gas or oxygen deficient areas", "General office areas", "Dusty roads"], ans: 1 },
+        { qEn: "What is the most basic rule for PPE usage?", qHi: "PPE के उपयोग का सबसे बुनियादी नियम क्या है?", options: ["Wear correct PPE properly for the specific job", "Wear PPE only when safety officer is nearby", "Store PPE in direct sunlight", "Share PPE without cleaning"], ans: 0 },
 
         // Positive Isolation
-        { q: "LOTOTO stands for: (LOTOTO का अर्थ क्या है?)", options: ["Lock Out Tag Out Try Out", "Load Testing", "Line Testing", "Live Operation"], ans: 0 },
-        { q: "Personal lock colour for Tata Steel employees: (टाटा स्टील कर्मचारियों के लिए पर्सनल लॉक का रंग:)", options: ["Yellow", "Blue", "Red (लाल)", "Black"], ans: 2 },
-        { q: "Who can remove a personal lock? (पर्सनल लॉक कौन हटा सकता है?)", options: ["Anyone", "Supervisor", "Lock owner (लॉक का मालिक)", "Contractor"], ans: 2 },
-        { q: "Working on equipment without isolation is: (बिना आइसोलेशन के कार्य करना:)", options: ["Safe", "Unsafe (असुरक्षित)", "Recommended", "Faster"], ans: 1 },
-        { q: "The Golden Principle of Positive Isolation is: (पॉजिटिव आइसोलेशन का मुख्य सिद्धांत?)", options: ["Save time", "My Life is My Life (मेरा जीवन मेरा जीवन है)", "Production First", "Fast Maintenance"], ans: 1 },
+        { qEn: "What does LOTOTO stand for?", qHi: "LOTOTO का पूर्ण रूप (Full Form) क्या है?", options: ["Lock Out, Tag Out, Try Out", "Line Operation, Testing, Testing Option", "Load Out, Tape Out, Turn Off", "Live Operation, Tag On, Turn On"], ans: 0 },
+        { qEn: "What color is the personal lock used by Tata Steel employees?", qHi: "टाटा स्टील के कर्मचारियों द्वारा उपयोग किए जाने वाले पर्सनल लॉक का रंग क्या है?", options: ["Yellow", "Blue", "Red", "Black"], ans: 2 },
+        { qEn: "Who is authorized to remove a personal lock applied on an isolation point?", qHi: "आइसोलेशन पॉइंट पर लगे पर्सनल लॉक को हटाने का अधिकार किसे है?", options: ["Any supervisor", "Shift in-charge", "The lock owner who applied it", "Safety coordinator"], ans: 2 },
+        { qEn: "Working on energized equipment without proper isolation is:", qHi: "बिना उचित आइसोलेशन के एनर्जाइज्ड इक्विपमेंट पर काम करना:", options: ["Allowed for short duration", "Unsafe and strictly prohibited", "Recommended for expert technicians", "Allowed with verbal order"], ans: 1 },
+        { qEn: "What is the core principle of Positive Isolation?", qHi: "पॉजिटिव आइसोलेशन (Positive Isolation) का मूल सिद्धांत क्या है?", options: ["Save production time", "My Life is My Life", "Fast maintenance execution", "Work first, lock later"], ans: 1 },
 
         // Material Handling
-        { q: "Tata Steel promotes: (टाटा स्टील किसे बढ़ावा देता है?)", options: ["Head Loading", "Manual Lifting Only", "Mechanized Handling (यांत्रिक साधनों से सामग्री संभालना)", "Shoulder Loading"], ans: 2 },
-        { q: "Recommended lifting limit for a male worker: (पुरुष कर्मचारी के लिए सुरक्षित भार सीमा?)", options: ["15 kg", "20 kg", "25 kg (25 किलोग्राम)", "30 kg"], ans: 2 },
-        { q: "Which body part should mainly be used while lifting? (भार उठाते समय किसका उपयोग करें?)", options: ["Back", "Neck", "Legs (पैर)", "Fingers"], ans: 2 },
-        { q: "While lifting, the back should be: (भार उठाते समय पीठ कैसी होनी चाहिए?)", options: ["Bent", "Twisted", "Straight (सीधी)", "Curved"], ans: 2 },
-        { q: "Standing or riding on a suspended load is: (लटके हुए भार पर खड़ा होना या सवारी करना:)", options: ["Allowed", "Allowed with supervision", "Not Allowed (अनुमति नहीं है)", "Allowed in emergency"], ans: 2 },
+        { qEn: "Which material handling approach is strongly promoted by Tata Steel?", qHi: "टाटा स्टील द्वारा किस मटीरियल हैंडलिंग दृष्टिकोण को बढ़ावा दिया जाता है?", options: ["Manual lifting of heavy loads", "Head loading", "Mechanized handling", "Shoulder carrying"], ans: 2 },
+        { qEn: "What is the recommended safe manual lifting limit for a male worker?", qHi: "एक पुरुष कार्यकर्ता के लिए अनुशंसित सुरक्षित वजन उठाने (Manual Lifting) की सीमा क्या है?", options: ["15 kg", "20 kg", "25 kg", "30 kg"], ans: 2 },
+        { qEn: "Which body parts should be primarily used to lift a heavy load from the ground?", qHi: "जमीन से भारी सामान उठाते समय मुख्य रूप से किस अंग का उपयोग करना चाहिए?", options: ["Back muscles", "Neck muscles", "Leg muscles", "Arm fingers"], ans: 2 },
+        { qEn: "While lifting a load manually, your back posture should be:", qHi: "मैन्युअल रूप से वजन उठाते समय आपकी पीठ की स्थिति कैसी होनी चाहिए?", options: ["Bent forward", "Twisted sideways", "Kept straight", "Curved backwards"], ans: 2 },
+        { qEn: "Standing or walking under a suspended load is:", qHi: "लटके हुए भार (Suspended Load) के नीचे खड़ा होना या चलना:", options: ["Allowed with hard hat", "Allowed if load is small", "Strictly Prohibited", "Allowed during rigging"], ans: 2 },
 
         // Fire Safety
-        { q: "Fire Triangle contains: (फायर ट्रायंगल में क्या होता है?)", options: ["Water", "Sand", "Fuel, Heat, Oxygen (ईंधन, गर्मी, ऑक्सीजन)", "Foam"], ans: 2 },
-        { q: "PASS means: (PASS का अर्थ क्या है?)", options: ["Pull, Aim, Squeeze, Sweep", "Push, Align, Stop, Start", "Protection Against Safety Hazards", "None"], ans: 0 },
-        { q: "First action during a fire: (आग लगने पर पहला कदम क्या है?)", options: ["Hide", "Raise Alarm (अलार्म बजाएं/शोर मचाएं)", "Run", "Ignore"], ans: 1 },
-        { q: "Correct extinguisher for electrical fires: (विद्युत आग के लिए सही अग्निशामक?)", options: ["Water", "Wet Chemical", "CO2 (कार्बन डाइऑक्साइड)", "Wood"], ans: 2 },
-        { q: "Most important fire safety rule: (सबसे महत्वपूर्ण आग सुरक्षा नियम?)", options: ["Delay reporting", "Report immediately and respond safely (तुरंत रिपोर्ट करें और सुरक्षित उत्तर दें)", "Ignore small fires", "Block exits"], ans: 1 },
+        { qEn: "What are the three components of the Fire Triangle?", qHi: "फायर ट्रायंगल (Fire Triangle) के तीन घटक कौन से हैं?", options: ["Water, Air, Wood", "Fuel, Heat, Oxygen", "Foam, Powder, CO2", "Spark, Smoke, Flame"], ans: 1 },
+        { qEn: "In fire safety, what does PASS stand for?", qHi: "अग्निशामक (Fire Extinguisher) का उपयोग करते समय PASS का अर्थ क्या है?", options: ["Pull, Aim, Squeeze, Sweep", "Push, Align, Stop, Start", "Protect, Alert, Save, Secure", "Point, Activate, Spray, Stop"], ans: 0 },
+        { qEn: "What is the first action to take upon discovering a fire?", qHi: "आग लगने का पता चलने पर पहला कदम क्या उठाना चाहिए?", options: ["Try to hide", "Raise alarm and inform nearest control room", "Run out of plant", "Wait for instructions"], ans: 1 },
+        { qEn: "Which fire extinguisher is most suitable for electrical fires?", qHi: "बिजली की आग के लिए कौन सा अग्निशामक सबसे उपयुक्त है?", options: ["Water type", "Foam type", "CO2 (Carbon Dioxide) type", "Wet chemical"], ans: 2 },
+        { qEn: "What is the primary action during a fire emergency evacution?", qHi: "आपातकालीन स्थिति में निकासी के समय प्राथमिक कार्य क्या है?", options: ["Use emergency exits and gather at designated Assembly Point", "Use elevators to go down fast", "Collect personal belongings first", "Lock the rooms"], ans: 0 },
 
         // Excavation
-        { q: "Major excavation hazard is: (खुदाई का प्रमुख खतरा क्या है?)", options: ["Soil collapse (मिट्टी ढहना/धंसना)", "Sunshine", "Noise", "Painting"], ans: 0 },
-        { q: "Spoil pile should be at least: (खुदाई सामग्री किनारे से कितनी दूरी पर रखें?)", options: ["0.5 m", "1 m (1 मीटर)", "3 m", "5 m"], ans: 1 },
-        { q: "If cable is found during excavation: (यदि खुदाई में केबल मिल जाए तो क्या करें?)", options: ["Continue excavation", "Stop work (तुरंत कार्य रोकें)", "Cut cable", "Ignore"], ans: 1 },
-        { q: "Ladder should extend above edge by: (सीढ़ी ऊपर कितनी निकली होनी चाहिए?)", options: ["0.5 m", "1 m (1 मीटर)", "2 m", "3 m"], ans: 1 },
-        { q: "Trial trench should be excavated by: (ट्रायल ट्रेंच कैसे खोदी जानी चाहिए?)", options: ["Excavator", "Manual method (हाथ से/मैनुअल)", "Bulldozer", "Crane"], ans: 1 },
+        { qEn: "What is the major hazard associated with excavation work?", qHi: "खुदाई कार्य (Excavation Work) से जुड़ा मुख्य खतरा क्या है?", options: ["Soil collapse / Cave-in", "Direct sunlight", "Ambient noise", "Ground moisture"], ans: 0 },
+        { qEn: "Excavated soil (spoil pile) should be kept at what minimum distance from the edge?", qHi: "खुदाई की गई मिट्टी (Spoil Pile) को गड्ढे के किनारे से कितनी न्यूनतम दूरी पर रखना चाहिए?", options: ["0.5 metre", "1 metre", "3 metres", "5 metres"], ans: 1 },
+        { qEn: "What should you do if an underground cable is accidentally uncovered during excavation?", qHi: "यदि खुदाई के दौरान अचानक भूमिगत केबल दिखाई दे तो क्या करना चाहिए?", options: ["Continue digging carefully", "Stop work immediately and notify supervisor", "Cut or pull the cable out", "Cover it back with soil"], ans: 1 },
+        { qEn: "An access ladder in an excavation pit must extend above the landing edge by at least:", qHi: "खुदाई के गड्ढे में सीढ़ी (Ladder) बाहर की ओर कितनी ऊंची होनी चाहिए?", options: ["0.5 metre", "1 metre", "2 metres", "3 metres"], ans: 1 },
+        { qEn: "How should trial trenches be excavated near underground utilities?", qHi: "भूमिगत पाइपलाइनों या केबलों के पास ट्रायल ट्रेंच (Trial Trench) कैसे खोदा जाना चाहिए?", options: ["Using heavy JCB excavator", "Using manual hand tools only", "Using hydraulic breakers", "Using bulldozer"], ans: 1 },
 
         // Confined Space
-        { q: "Golden Rule for Confined Space entry: (कन्फाइंड स्पेस का सुनहरी नियम?)", options: ["No Permit = No Entry (परमिट नहीं = प्रवेश नहीं)", "Direct Entry Allowed", "Entry with Helmet Only", "None"], ans: 0 },
-        { q: "Safe Oxygen level for entry is: (सुरक्षित ऑक्सीजन का स्तर कितना होना चाहिए?)", options: ["10% to 15%", "19.5% to 23.5%", "25% to 30%", "Below 18%"], ans: 1 },
-        { q: "Attendant shall stay: (अटेंडेंट को कहाँ रहना चाहिए?)", options: ["Inside space", "Stay outside (बाहर रहना चाहिए)", "Go for tea", "In office"], ans: 1 },
-        { q: "Ventilation should be: (वेंटिलेशन की व्यवस्था कैसी होनी चाहिए?)", options: ["For 5 mins", "Continuous throughout the job (कार्य पूरा होने तक लगातार)", "Not needed", "Once in hour"], ans: 1 },
-        { q: "Safe temperature for entry should be less than: (प्रवेश के लिए सुरक्षित तापमान?)", options: ["45°C (45°C से कम)", "60°C", "70°C", "100°C"], ans: 0 }
+        { qEn: "What is the Golden Rule for Confined Space Entry?", qHi: "कन्फाइंड स्पेस (Confined Space) में प्रवेश के लिए स्वर्णिम नियम क्या है?", options: ["No Permit = No Entry", "Direct Entry allowed with helmet", "Entry allowed with torch only", "Entry allowed if space looks clean"], ans: 0 },
+        { qEn: "What is the safe range of Oxygen percentage required for confined space entry?", qHi: "कन्फाइंड स्पेस में प्रवेश के लिए ऑक्सीजन का सुरक्षित स्तर कितना होना चाहिए?", options: ["10% to 15%", "19.5% to 23.5%", "25% to 30%", "Below 18%"], ans: 1 },
+        { qEn: "Where must the standby attendant position themselves during confined space work?", qHi: "स्टैंडबाय अटेंडेंट (Standby Attendant) को काम के दौरान कहाँ तैनात रहना चाहिए?", options: ["Inside the confined space", "Outside near the entrance point at all times", "In the office room", "At the canteen"], ans: 1 },
+        { qEn: "Ventilation in a confined space during work execution must be:", qHi: "कन्फाइंड स्पेस में वेंटिलेशन (Ventilation) कब तक चलना चाहिए?", options: ["For initial 5 minutes only", "Continuous throughout the job execution", "Switched off after 1 hour", "Not required if door is open"], ans: 1 },
+        { qEn: "What is the maximum safe working temperature inside a confined space for entry?", qHi: "कन्फाइंड स्पेस में प्रवेश के लिए अधिकतम सुरक्षित तापमान कितना है?", options: ["Less than 45°C", "60°C", "70°C", "100°C"], ans: 0 }
     ];
 
     window.onload = function() {
@@ -384,7 +391,7 @@
                 <div class="form-group"><label>Department *</label><input type="text" id="department" class="form-control" placeholder="Department" style="text-transform:none;"></div>
                 <div style="margin: 15px 0;">
                     <label style="font-size:13px; font-weight:bold;">
-                        <input type="checkbox" id="readDeclaration"> Maine safety rules padh liye hain.
+                        <input type="checkbox" id="readDeclaration"> I have read and understood all safety instructions.
                     </label>
                 </div>
                 <button type="button" id="startExamBtn" class="btn btn-success btn-block" onclick="validateAndStartTest()">Start Examination Now</button>
@@ -412,23 +419,23 @@
         const checked = checkInput ? checkInput.checked : false;
 
         if (!name || !passNo || !vendor || !dept) {
-            alert("Kripya saare Details sahi se bharein!");
+            alert("Please fill all details correctly!");
             return;
         }
 
         if (passNo.length !== 12) {
-            alert(`Invalid Safety Pass Number!\nPass Number poore 12 characters ka hona chahiye. Aapne sirf ${passNo.length} characters daale hain.`);
+            alert(`Invalid Safety Pass Number!\nPass Number must be exactly 12 characters. You entered ${passNo.length} characters.`);
             return;
         }
 
         const strictTwelveRegex = /^[A-Z0-9]{12}$/;
         if (!strictTwelveRegex.test(passNo)) {
-            alert("Invalid Safety Pass Number!\nKewal Digits (0-9) aur Alphabets (A-Z) allowed hain, exact 12 characters.");
+            alert("Invalid Safety Pass Number!\nOnly alphanumeric characters (A-Z, 0-9) are allowed.");
             return;
         }
 
         if (!checked) {
-            alert("Kripya checkbox par tick karein!");
+            alert("Please check the declaration box!");
             return;
         }
 
@@ -448,7 +455,7 @@
             });
 
             if (isDuplicate) {
-                alert(`Warning: Safety Pass Number "${passNo}" pehle se hi registered hai!\nDuplicate entry allowed nahi hai.`);
+                alert(`Warning: Safety Pass Number "${passNo}" is already registered!\nDuplicate attempts are not allowed.`);
                 startBtn.innerText = "Start Examination Now";
                 startBtn.disabled = false;
                 return;
@@ -473,7 +480,8 @@
         DIRECT_QUESTIONS_BANK.forEach((qObj, index) => {
             formHTML += `
                 <div class="q-block">
-                    <div class="q-text">${index + 1}. ${qObj.q}</div>
+                    <div class="q-text-en">${index + 1}. ${qObj.qEn}</div>
+                    <div class="q-text-hi">${qObj.qHi}</div>
                     ${qObj.options.map((opt, oIdx) => `
                         <label class="opt-label">
                             <input type="radio" name="q_${index}" value="${oIdx}">
@@ -537,7 +545,7 @@
             dept: currentWorkerDetails.dept,
             timeTaken: formattedTime,
             score: `${totalScore}/${totalQuestions}`,
-            userAnswers: userAnswersArr, // STRICT ARRAY MAPPING
+            userAnswers: userAnswersArr,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
 
@@ -551,7 +559,7 @@
         document.getElementById('modalTitle').innerText = "Exam Result";
         document.getElementById('modalContent').innerHTML = `
             <div style="text-align:center; padding:20px;">
-                <h3>Exam Submitted</h3>
+                <h3>Exam Submitted Successfully</h3>
                 <br>
                 <p>Candidate: <b>${currentWorkerDetails.name}</b></p>
                 <p>Pass No: <b>${currentWorkerDetails.passNo}</b></p>
@@ -591,7 +599,38 @@
         });
     }
 
-    // VIEW DETAILED CANDIDATE RESPONSE SHEET
+    // Admin Feature: Master Question Bank with Correct Answers
+    function viewMasterQuestionBank() {
+        document.getElementById('modalTitle').innerText = "Master Question Bank (With Correct Answers)";
+        document.getElementById('timerBox').style.display = "none";
+
+        let html = `
+            <div style="margin-bottom:15px; background:#e0f2fe; padding:10px; border-radius:4px; font-size:13px; color:#075985;">
+                <b>Admin Note:</b> Highlighting correct answers for all 50 questions.
+            </div>
+        `;
+
+        DIRECT_QUESTIONS_BANK.forEach((qObj, idx) => {
+            html += `
+                <div class="ans-card" style="border-color:#cbd5e1; background:#ffffff;">
+                    <div class="q-text-en">Q${idx + 1}. ${qObj.qEn}</div>
+                    <div class="q-text-hi">${qObj.qHi}</div>
+                    <ul class="opt-list">
+                        ${qObj.options.map((opt, oIdx) => {
+                            let isCorrect = oIdx === qObj.ans;
+                            let style = isCorrect ? 'class="opt-item actual-correct"' : 'class="opt-item"';
+                            let label = isCorrect ? ' ✓ <b>(CORRECT ANSWER)</b>' : '';
+                            return `<li ${style}>${opt}${label}</li>`;
+                        }).join('')}
+                    </ul>
+                </div>
+            `;
+        });
+
+        document.getElementById('modalContent').innerHTML = html;
+        document.getElementById('appModal').style.display = "flex";
+    }
+
     function viewCandidateAnswers(resultId) {
         const record = testResultsList.find(r => r.id === resultId);
         if (!record) return alert("Record not found!");
@@ -606,7 +645,7 @@
                 <p><b>Vendor:</b> ${record.vendor} | <b>Department:</b> ${record.dept}</p>
                 <p><b>Score:</b> <span style="color:var(--primary); font-weight:bold; font-size:15px;">${record.score}</span> | <b>Time Taken:</b> ${record.timeTaken}</p>
             </div>
-            <h4 style="margin-bottom:10px;">Question-by-Question Report:</h4>
+            <h4 style="margin-bottom:10px;">Question-by-Question Detailed Report:</h4>
         `;
 
         DIRECT_QUESTIONS_BANK.forEach((qObj, idx) => {
@@ -621,7 +660,8 @@
             reviewHTML += `
                 <div class="ans-card ${cardStatusClass}">
                     ${badgeHTML}
-                    <div style="font-weight:bold; font-size:14px; color:#000;">Q${idx + 1}. ${qObj.q}</div>
+                    <div class="q-text-en">Q${idx + 1}. ${qObj.qEn}</div>
+                    <div class="q-text-hi">${qObj.qHi}</div>
                     <ul class="opt-list">
                         ${qObj.options.map((opt, oIdx) => {
                             let itemClass = "opt-item";
@@ -652,7 +692,6 @@
         document.getElementById('appModal').style.display = "flex";
     }
 
-    // EDIT RESULT ENTRY
     function editResultEntry(resultId) {
         const record = testResultsList.find(r => r.id === resultId);
         if (!record) return;
@@ -702,9 +741,8 @@
         }
     }
 
-    // DELETE RESULT ENTRY
     async function deleteResultEntry(resultId) {
-        if (confirm("Kya aap sach me iss Result Entry ko DELETE karna chahte hain?")) {
+        if (confirm("Are you sure you want to delete this result entry?")) {
             try {
                 await db.collection("test_results").doc(resultId).delete();
                 alert("Result entry deleted successfully!");
